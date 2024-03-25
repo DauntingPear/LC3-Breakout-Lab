@@ -12,4 +12,4 @@ there should be a START instruction.
 The memory addresses starting at `xC000` is a memory mapped IO address.The devices 
 output ends as `xFDFF`.
 So the addresses `xC000` -> `xFDFF` are mapped to pixels on the video output.
-The display is 128x128 pixels.
+The display is 128x124 pixels.
