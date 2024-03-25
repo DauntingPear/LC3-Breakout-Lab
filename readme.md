@@ -1,19 +1,19 @@
 # PennSim LC3 ISA Breakout Game
 
 Make sure the starter code is assembled.
-```
+```PennSim Command
 as starter_code.asm
 ```
 
 This produces the binary file and the object file. We will load the `.obj` file.
 The `lc3os.asm` file is the OS code which defines the TRAPs.
 
-```
+```PennSim Command
 as lc3os.asm
 ```
 
 To load the OS and starter code use `file -> open` or
-```
+```PennSim Command
 ld lc3os.obj
 ld starter_code.obj
 ```
