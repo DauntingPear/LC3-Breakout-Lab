@@ -43,51 +43,32 @@ ADD R4,R4,#-1
 BRp TIMES4
 
 
-;; LEFT AND RIGHT SIDES
-;; Here you will write the code which will draw the left and right walls with the spacing
-;; and dimensions listed in the homework problem. There should be 76 pixels of space between
-;; the inside of the left and right walls, and the left and right walls should be 4 pixels.
-
-;;
 ;; <==== RIGHT FILL ====>
-;;
-;; 84 -> 0x53 <- Start of column to draw
-;; 128 - 84 -> 44 (0x2C) <- distance to end of row
+LD R5,VIDEO
 
-;; R5 -> pixel address (absolute in memory)
-;; R7 -> Color Value
-;; R4 -> Number of rows
-;; R0 -> Position of pixel to insert, relative from start of row
-;; R1 -> Length of row
-
-LD R5,VIDEO ; This is in preparation for drawing the top border, row by row. 
-; Each row has length 80 decimal
 LD R6,EIGHTY
 ADD R5,R5,#4
 ADD R5,R5,R6
 LD R6,ZERO
 
-LD R1,FOUR ;
-LD R7,RED ; Pixel Color
+LD R1,FOUR
+LD R7,RED
 
-LD R4, ONE24 ; We need 124 such rows of length 4 decimal each
-RIGHTLOOP LD R0,ZERO ; This loop repeats 124 times, once for each row
-RIGHTCOL STR R7,R5,#0 ; Storing a red pixel at the present display pointer, and incrementing the pointer
-ADD R0,R0,#1 ;
-ADD R5,R5,#1 ;
-LD R3,ZERO ; In this loop, we check if the length limit has been reached. If not, we go
-; back to RIGHTCOL
-ADD R3,R3,R0 ;
-NOT R3,R3 ;
-ADD R3,R3,#1 ;
-ADD R3,R1,R3 ;
-BRzp RIGHTCOL ; break on negative number
-LD R3,NEXTC ; Here we do the same thing 4 times.. Uses NEXTR label (for next row)
-ADD R5,R5,R3 ; ..but remember that the display pointer must now point to the next row's
-;starting address
-ADD R4,R4,#-1 ; subtract 1 from register which holds number of rows to make
-; Can HALT here to ensure overwriting 4 pixels from top row
-BRp RIGHTLOOP ;
+LD R4, ONE24
+RIGHTLOOP LD R0,ZERO
+RIGHTCOL STR R7,R5,#0
+ADD R0,R0,#1
+ADD R5,R5,#1
+LD R3,ZERO
+ADD R3,R3,R0
+NOT R3,R3
+ADD R3,R3,#1
+ADD R3,R1,R3
+BRzp RIGHTCOL
+LD R3,NEXTC
+ADD R5,R5,R3
+ADD R4,R4,#-1
+BRp RIGHTLOOP
 
 ;;
 ;; <==== LEFT FILL ====>
