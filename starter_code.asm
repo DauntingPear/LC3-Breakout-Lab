@@ -65,6 +65,7 @@ BRp TIMES4 ;
 LD R5,VIDEO ; This is in preparation for drawing the top border, row by row. 
 ; Each row has length 80 decimal
 LD R6,EIGHTY
+ADD R5,R5,#4
 ADD R5,R5,R6
 LD R6,ZERO
 
