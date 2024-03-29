@@ -19,30 +19,28 @@ BRp LOOP0 ;
 ;;
 ;;<==== TOP FILL ====>
 ;;
-LD R5,VIDEO ; This is in preparation for drawing the top border, row by row. 
-; Each row has length 80 decimal
+LD R5,VIDEO
 
-LD R1,RMAX ;
-LD R7,RED ; The value of a red pixel
+LD R1,RMAX
+LD R7,RED
 
 ;; TOP SIDE
-LD R4,FOUR ; We need 4 such rows of length 80 decimal each (uses a label FOUR, look at end of file)
-TIMES4 LD R0,ZERO ; This loop repeats 4 times, once for each row
-LOOP1 STR R7,R5,#0 ; Storing a red pixel at the present display pointer, and incrementing the pointer
-ADD R0,R0,#1 ;
-ADD R5,R5,#1 ;
-LD R3,ZERO ; In this loop, we check if the length limit has been reached. If not, we go
-; back to LOOP1
-ADD R3,R3,R0 ;
-NOT R3,R3 ;
-ADD R3,R3,#1 ;
-ADD R3,R1,R3 ;
-BRzp LOOP1 ; break on negative number
-LD R3,NEXTR ; Here we do the same thing 4 times.. Uses NEXTR label (for next row)
-ADD R5,R5,R3 ; ..but remember that the display pointer must now point to the next row's
-;starting address
-ADD R4,R4,#-1 ; subtract 1 from register which holds number of rows to make
-BRp TIMES4 ;
+LD R4,FOUR
+TIMES4 LD R0,ZERO
+LOOP1 STR R7,R5,#0
+ADD R0,R0,#1
+ADD R5,R5,#1
+LD R3,ZERO
+
+ADD R3,R3,R0
+NOT R3,R3
+ADD R3,R3,#1
+ADD R3,R1,R3
+BRzp LOOP1
+LD R3,NEXTR
+ADD R5,R5,R3
+ADD R4,R4,#-1
+BRp TIMES4
 
 
 ;; LEFT AND RIGHT SIDES
