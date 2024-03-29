@@ -44,31 +44,60 @@ BRp TIMES4
 
 
 ;; <==== RIGHT FILL ====>
-LD R5,VIDEO
 
+;; R7 <- Pixel color
+;; R6 <- None
+;; R5 <- Absolute pixel position
+;; R4 <- Outer loop iterator
+;; R3 <- Iterator check by negation
+;; R2 <- None
+;; R1 <- Iterator bound counter
+;; R0 <- Relative pixel position
+
+LD R5,VIDEO
+LD R7,RED
+
+;; Set initial absolute pixel position
 LD R6,EIGHTY
 ADD R5,R5,#4
 ADD R5,R5,R6
 LD R6,ZERO
 
-LD R1,FOUR
-LD R7,RED
+LD R1,FOUR ; Inner loop iterator bound
+LD R4, ONE24 ; Outer loop iterator
 
-LD R4, ONE24
-RIGHTLOOP LD R0,ZERO
-RIGHTCOL STR R7,R5,#0
-ADD R0,R0,#1
-ADD R5,R5,#1
-LD R3,ZERO
-ADD R3,R3,R0
-NOT R3,R3
-ADD R3,R3,#1
-ADD R3,R1,R3
-BRzp RIGHTCOL
-LD R3,NEXTC
-ADD R5,R5,R3
-ADD R4,R4,#-1
-BRp RIGHTLOOP
+RIGHTLOOP ; Controls for each loop
+
+LD R0,ZERO ; Set relative pixel position
+
+  RIGHTCOL ; 
+
+    STR R7,R5,#0 ; Set pixel color
+
+    ADD R0,R0,#1 ; Increment relative pixel position
+    ADD R5,R5,#1 ; Increment absolute pixel position
+
+    ;; Check if iterator has exceeded bounds
+    LD R3,ZERO
+    ADD R3,R3,R0
+    NOT R3,R3
+    ADD R3,R3,#1
+    ADD R3,R1,R3
+
+    BRzp RIGHTCOL
+
+  RIGHTCOL_END
+
+  ;; Increment absolute pixel position by next row pixel difference
+  LD R3,NEXTC
+  ADD R5,R5,R3
+
+  ;; Decrement iterator
+  ADD R4,R4,#-1
+  
+  BRp RIGHTLOOP
+
+RIGHTLOOP_END
 
 ;; <==== LEFT FILL ====>
 
