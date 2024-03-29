@@ -75,7 +75,7 @@ BRp RIGHTLOOP
 ;; R7 <- Pixel color
 ;; R6 <- None
 ;; R5 <- Absolute pixel position
-;; R4 <- Iterator counter
+;; R4 <- Outer loop iterator
 ;; R3 <- Iterator check by negation
 ;; R2 <- None
 ;; R1 <- Iterator bound counter
