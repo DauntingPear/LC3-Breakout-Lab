@@ -91,12 +91,7 @@ ADD R5,R5,R3
 ADD R4,R4,#-1
 BRp LEFTLOOP
 
-;;
 ;; <==== BRICKS FILL ====>
-;;
-;; Here you will draw the three bricks with spacing and dimensions as listed in the homework.
-;; Bricks should be 4x20, and have 4 pixels between themselves and the walls and other bricks.
-;; It is suggested you use a different color for bricks than for walls.
 
 ;; R7 <- Color
 ;; R6 <- None
@@ -114,41 +109,39 @@ ADD R5,R5,R0 ; Add brick starting position offset
 LD R7,GREEN ; Load pixel color
 
 ;; ----
-LD R4,BRICKHEIGHT
 
-DRAW_BRICKS
+LD R4,BRICKHEIGHT ; DRAW_BRICKS iterator
+DRAW_BRICKS ; Loop draws each row for each brick
 
-  LD R2, THREE
-  DRAW_IN_ROW; Draws the brick
+  LD R2, THREE ; DRAW_IN_ROW iterator
+  DRAW_IN_ROW ; Loop used to draw each brick row in row
 
-    ;; Initialize Register values
+    LD R0,ZERO ; Relative pointer position, used for drawing
+    LD R1,BRICKWIDTH ; DRAW_BRICK_ROW iterator
 
-    LD R0,ZERO
-    LD R1,BRICKWIDTH
-
-    DRAW_BRICK_ROW
+    DRAW_BRICK_ROW ; Loop used to draw the brick row
       STR R7,R5,#0  
 
       ;; Increment pointer position
       ADD R0,R0,#1
       ADD R5,R5,#1
-      ADD R1,R1,#-1
+      ADD R1,R1,#-1 ; R1-- decr iterator
       
       BRzp DRAW_BRICK_ROW ; If length remaining is >= 0 then loop
     DRAW_BRICK_ROW_END
 
     ADD R5,R5,#4
-    ADD R2,R2,#-1
-    BRzp DRAW_IN_ROW
+    ADD R2,R2,#-1 ; R2-- decr iterator
+    BRzp DRAW_IN_ROW ; If number of bricks to draw is >= 0 then loop
 
   DRAW_IN_ROW_END
 
   LD R3,BRICKNEXTROW
-  ADD R5,R5,R3
-  LD R3,ZERO
-  ADD R4,R4,#-1
+  ADD R5,R5,R3 ; Set absolute pointer to next row start
+  LD R3,ZERO ; Reset register
+  ADD R4,R4,#-1 ; R4-- decr iterator
 
-  BRzp DRAW_BRICKS
+  BRzp DRAW_BRICKS ; If number of rows remaining is >= 0 then loop
 
 DRAW_BRICKS_END
 
