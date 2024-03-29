@@ -108,9 +108,11 @@ LD R0,ZERO ; Reset relative pixel counter
 
   LEFTCOL_END
 
+  ;; Increment absolute pixel position by next row pixel difference
   LD R3,NEXTC
   ADD R5,R5,R3
   ADD R4,R4,#-1
+
   BRp LEFTLOOP
 
 LEFTLOOP_END
