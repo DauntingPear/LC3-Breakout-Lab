@@ -71,25 +71,49 @@ ADD R4,R4,#-1
 BRp RIGHTLOOP
 
 ;; <==== LEFT FILL ====>
+
+;; R7 <- Pixel color
+;; R6 <- None
+;; R5 <- Absolute pixel position
+;; R4 <- Iterator counter
+;; R3 <- Iterator check by negation
+;; R2 <- None
+;; R1 <- Iterator bound counter
+;; R0 <- Relative pixel position
+
 LD R5,VIDEO
-LD R1,FOUR
+LD R1,FOUR ; Iterator bound
 LD R7,RED
 
 LD R4, ONE24
-LEFTLOOP LD R0,ZERO
-LEFTCOL STR R7,R5,#0
-ADD R0,R0,#1
-ADD R5,R5,#1
-LD R3,ZERO
-ADD R3,R3,R0
-NOT R3,R3
-ADD R3,R3,#1
-ADD R3,R1,R3
-BRzp LEFTCOL
-LD R3,NEXTC
-ADD R5,R5,R3
-ADD R4,R4,#-1
-BRp LEFTLOOP
+
+LEFTLOOP ; Controls for each row
+
+LD R0,ZERO ; Reset relative pixel counter
+
+  LEFTCOL
+
+    STR R7,R5,#0 ; Controls drawing pixels in each row
+    ADD R0,R0,#1 ; Increment relative counter
+    ADD R5,R5,#1 ; Increment absolute counter
+
+    ; Check to see if iterator exceeded bounds
+    LD R3,ZERO
+    ADD R3,R3,R0
+    NOT R3,R3
+    ADD R3,R3,#1
+    ADD R3,R1,R3
+
+    BRzp LEFTCOL
+
+  LEFTCOL_END
+
+  LD R3,NEXTC
+  ADD R5,R5,R3
+  ADD R4,R4,#-1
+  BRp LEFTLOOP
+
+LEFTLOOP_END
 
 ;; <==== BRICKS FILL ====>
 
