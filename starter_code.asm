@@ -70,35 +70,26 @@ ADD R5,R5,R3
 ADD R4,R4,#-1
 BRp RIGHTLOOP
 
-;;
 ;; <==== LEFT FILL ====>
-;;
-;; Height <- 124 (0x7C)
-;; 128 - 124 = 0x7C <- Distance to end of row
+LD R5,VIDEO
+LD R1,FOUR
+LD R7,RED
 
-LD R5,VIDEO ; This is in preparation for drawing the top border, row by row. 
-; Each row has length 80 decimal
-
-LD R1,FOUR ; Initialize the width
-LD R7,RED ; The value of a red pixel
-
-LD R4, ONE24 ; We need 124 such rows of length 4 decimal each
-LEFTLOOP LD R0,ZERO ; This loop repeats 124 times, once for each row
-LEFTCOL STR R7,R5,#0 ; Storing a red pixel at the present display pointer, and incrementing the pointer
-ADD R0,R0,#1 ;
-ADD R5,R5,#1 ;
-LD R3,ZERO ; In this loop, we check if the length limit has been reached. If not, we go
-; back to LOOP1
-ADD R3,R3,R0 ;
-NOT R3,R3 ;
-ADD R3,R3,#1 ;
-ADD R3,R1,R3 ;
-BRzp LEFTCOL ; break on negative number
-LD R3,NEXTC ; Here we do the same thing 4 times.. Uses NEXTR label (for next row)
-ADD R5,R5,R3 ; ..but remember that the display pointer must now point to the next row's
-;starting address
-ADD R4,R4,#-1 ; subtract 1 from register which holds number of rows to make
-BRp LEFTLOOP ;
+LD R4, ONE24
+LEFTLOOP LD R0,ZERO
+LEFTCOL STR R7,R5,#0
+ADD R0,R0,#1
+ADD R5,R5,#1
+LD R3,ZERO
+ADD R3,R3,R0
+NOT R3,R3
+ADD R3,R3,#1
+ADD R3,R1,R3
+BRzp LEFTCOL
+LD R3,NEXTC
+ADD R5,R5,R3
+ADD R4,R4,#-1
+BRp LEFTLOOP
 
 ;;
 ;; <==== BRICKS FILL ====>
