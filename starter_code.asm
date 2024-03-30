@@ -65,64 +65,7 @@ TIMES4
 
 TIMES4_END
 
-
-;; <==== RIGHT FILL ====>
-
-;; R7 <- Pixel color
-;; R6 <- None
-;; R5 <- Absolute pixel position
-;; R4 <- Outer loop iterator
-;; R3 <- Iterator check by negation
-;; R2 <- None
-;; R1 <- Iterator bound counter
-;; R0 <- Relative pixel position
-
-LD R5,VIDEO
-LD R7,RED
-
-;; Set initial absolute pixel position
-LD R6,EIGHTY
-ADD R5,R5,#4
-ADD R5,R5,R6
-LD R6,ZERO
-
-LD R1,FOUR ; Inner loop iterator bound
-LD R4, ONE24 ; Outer loop iterator
-
-RIGHTLOOP ; Controls for each loop
-
-LD R0,ZERO ; Set relative pixel position
-
-  RIGHTCOL ; 
-
-    STR R7,R5,#0 ; Set pixel color
-
-    ADD R0,R0,#1 ; Increment relative pixel position
-    ADD R5,R5,#1 ; Increment absolute pixel position
-
-    ;; Check if iterator has exceeded bounds
-    LD R3,ZERO
-    ADD R3,R3,R0
-    NOT R3,R3
-    ADD R3,R3,#1
-    ADD R3,R1,R3
-
-    BRzp RIGHTCOL
-
-  RIGHTCOL_END
-
-  ;; Increment absolute pixel position by next row pixel difference
-  LD R3,NEXTC
-  ADD R5,R5,R3
-
-  ;; Decrement iterator
-  ADD R4,R4,#-1
-  
-  BRp RIGHTLOOP
-
-RIGHTLOOP_END
-
-;; <==== LEFT FILL ====>
+;; <==== Draw Sides ====>
 
 ;; R7 <- Pixel color
 ;; R6 <- None
@@ -134,40 +77,51 @@ RIGHTLOOP_END
 ;; R0 <- Relative pixel position
 
 LD R5,VIDEO
-LD R1,FOUR ; Iterator bound
 LD R7,RED
 
 LD R4, ONE24
 
-LEFTLOOP ; Controls for each row
+DRAW_SIDES ; Controls for each row
 
-LD R0,ZERO ; Reset relative pixel counter
+  LD R1,FOUR ; Iterator bound
+  LD R0,ZERO ; Reset relative pixel counter
 
-  LEFTCOL
+  DRAW_LEFT
 
     STR R7,R5,#0 ; Controls drawing pixels in each row
     ADD R0,R0,#1 ; Increment relative counter
     ADD R5,R5,#1 ; Increment absolute counter
 
-    ; Check to see if iterator exceeded bounds
-    LD R3,ZERO
-    ADD R3,R3,R0
-    NOT R3,R3
-    ADD R3,R3,#1
-    ADD R3,R1,R3
+    ADD R1,R1,#-1
+    BRzp DRAW_LEFT
 
-    BRzp LEFTCOL
+  DRAW_LEFT_END
 
-  LEFTCOL_END
-
-  ;; Increment absolute pixel position by next row pixel difference
-  LD R3,NEXTC
+  ;; Increment absolute pixel position by next side pixel difference
+  LD R3,NEXTSIDE
   ADD R5,R5,R3
+
+  LD R1,FOUR
+  LD R0,ZERO
+
+  DRAW_RIGHT
+
+    STR R7,R5,#0 ; Controls drawing pixels in each row
+    ADD R0,R0,#1 ; Increment relative counter
+    ADD R5,R5,#1 ; Increment absolute counter
+
+    ADD R1,R1,#-1
+    BRzp DRAW_RIGHT
+
+  DRAW_RIGHT_END
+
+  LD R3,INCRSIDE
+  ADD R5,R5,R3
+
   ADD R4,R4,#-1
+  BRp DRAW_SIDES
 
-  BRp LEFTLOOP
-
-LEFTLOOP_END
+DRAW_SIDES_END
 
 ;; <==== BRICKS FILL ====>
 
@@ -249,6 +203,8 @@ EIGHT .FILL x0008
 NEXTR .FILL x002C
 RMAX .FILL x0053
 NEXTC .FILL x007C
+NEXTSIDE .FILL x0050
+INCRSIDE .FILL x0028
 
 BRICKSTART .FILL x0408
 BRICKHEIGHT .FILL x0004
