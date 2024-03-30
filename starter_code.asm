@@ -61,7 +61,7 @@ TIMES4
 
   ADD R4,R4,#-1 ; Decrement outer loop iterator
 
-  BRp TIMES4
+  BRzp TIMES4
 
 TIMES4_END
 
