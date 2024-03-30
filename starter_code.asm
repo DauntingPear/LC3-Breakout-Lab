@@ -16,31 +16,54 @@ BRp LOOP0 ;
 ;;
 
 
-;;
 ;;<==== TOP FILL ====>
-;;
+
+;; R7 <- Pixel Color
+;; R6 <- None
+;; R5 <- Absolute pixel position
+;; R4 <- Outer loop iterator
+;; R3 <- Iterator check by negation
+;; R2 <- None
+;; R1 <- Iterator bound counter
+;; R0 <- Relative pixel position
+
 LD R5,VIDEO
+LD R7,RED ; Pixel color
 
-LD R1,RMAX
-LD R7,RED
+LD R1,RMAX ; Set inner iterator bound check
 
-;; TOP SIDE
 LD R4,FOUR
-TIMES4 LD R0,ZERO
-LOOP1 STR R7,R5,#0
-ADD R0,R0,#1
-ADD R5,R5,#1
-LD R3,ZERO
 
-ADD R3,R3,R0
-NOT R3,R3
-ADD R3,R3,#1
-ADD R3,R1,R3
-BRzp LOOP1
-LD R3,NEXTR
-ADD R5,R5,R3
-ADD R4,R4,#-1
-BRp TIMES4
+TIMES4
+
+  LD R0,ZERO
+  LOOP1
+
+    STR R7,R5,#0 ; Set pixel color
+
+    ADD R0,R0,#1 ; Increment relative pixel position
+    ADD R5,R5,#1 ; Increment absolute pixel position
+
+    ;; Check if relative pixel position has exceeded bounds
+    LD R3,ZERO
+    ADD R3,R3,R0
+    NOT R3,R3
+    ADD R3,R3,#1
+    ADD R3,R1,R3
+
+    BRzp LOOP1
+
+  LOOP1_END
+
+  ;; Increment absolute pixel position to next row
+  LD R3,NEXTR
+  ADD R5,R5,R3
+
+  ADD R4,R4,#-1 ; Decrement outer loop iterator
+
+  BRp TIMES4
+
+TIMES4_END
 
 
 ;; <==== RIGHT FILL ====>
