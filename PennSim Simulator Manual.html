@@ -1,0 +1,809 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!-- saved from url=(0540)https://alt-5af6ed3646f67.blackboard.com/bbcswebdav/pid-12734366-dt-content-rid-58836494_1/courses/61306_1248/61306_1248_ImportedContent_20240110100718/31067_1244_ImportedContent_20230822030725/31036_1234_ImportedContent_20220822061514/61702_1228_ImportedContent_20220111114202/31799_1224_ImportedContent_20210823123858/31777_1214_ImportedContent_20200826093508/32794_1204_ImportedContent_20190830105749/Course%20Documents/simulator%20LC3/pennsim-manual.html?one_hash=F511A8AA588F18A75CB84CAB773F2D6D&f_hash=8BB540D00D38C3CACB8EB45D4392A551 -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+    <title>PennSim Simulator Manual</title>
+    <style type="text/css">
+<!--
+.notabene { font-weight: bold; color: #FF0000; }
+.command {
+	font-family: "Courier New", Courier, mono;
+	font-size: 14px;
+}
+-->
+    </style>
+  </head>
+
+  <body>
+    <h1>PennSim Simulator Manual</h1>
+
+Copyright notice: This document was originally created by Prof. Milo Martin at University of Pennsylvania.
+
+<h3>Overview</h3>
+
+This document describes the Java-based PennSim simulator (and assembler)
+developed at the University of Pennsylvania.  It does not teach assembly
+programming or debugging techniques.  Instead, it simply describes the features
+available in the simulator. <p>
+
+PennSim provides an interface to executing LC-3 programs on a simulated LC-3
+machine.  The interface allows users to observe and effect changes to devices
+(such as the graphical video display, console text output, and keyboard input).
+It also allows users to control or limit the execution of a programming running
+on the simulator (for example, we might want to execute a program one
+instruction at a time) and observe or modify the state (memory and registers)
+of the machine.</p><p>
+
+PennSim provides both a graphical and text-based interface (the later is
+specified via the '-t' flag).  Our expectation is that only the graphical
+interface will be used, so this document does not describe the text interface
+explicitly.  Nevertheless, most of the functionality of the graphic interface
+is available (via the "Command Line") to the text interface.</p><p>
+
+</p><h3>Running PennSim</h3>
+
+<p>
+For instructions on downloading and running the simulator, please see the <a href="https://alt-5af6ed3646f67.blackboard.com/bbcswebdav/pid-12734366-dt-content-rid-58836494_1/courses/61306_1248/61306_1248_ImportedContent_20240110100718/31067_1244_ImportedContent_20230822030725/31036_1234_ImportedContent_20220822061514/61702_1228_ImportedContent_20220111114202/31799_1224_ImportedContent_20210823123858/31777_1214_ImportedContent_20200826093508/32794_1204_ImportedContent_20190830105749/Course%20Documents/simulator%20LC3/pennsim-guide.html">PennSim Guide</a>.
+</p>
+
+
+<h3>PennSim Summary</h3>
+
+the PennSim window consists of five components: Menus, Controls,
+Registers, Memory, and Devices.  Each is described below.<p>
+
+</p><h4>Menus</h4>
+<p>
+There are only two menus available ("File" and "About").  The "Open .obj File"
+menu item under "File" is used to load an object file into the machine.  Note
+that this can also be achieved via the "Command Line" (see below).  The "Open
+Command Output Window" menu item under "File" opens a window that mirrors the
+context of the "Command Line Output" panel (see Controls section, below).  This
+is often useful because the Command Output Panel is somewhat small.  Finally,
+the "Quit" menu item under "File" causes the simulator to terminate (after
+confirmation).
+</p>
+<p>
+The "About" menu has only one item - "Simulator Version." Use this to
+make sure you're running the most current version of the simulator
+that has all the latest bug fixes, features, etc.
+</p>
+
+<h4>Controls</h4>
+
+The "Controls" section of PennSim (appearing at the top of
+the simulator window) is used to control and monitor the simulated
+machine. It contains four components: Execution Buttons, Machine Status
+Indicator, Command Line, and Command Line Output panel.  Each are
+described below.<p>
+
+</p><h5>Execution Buttons</h5>
+
+<p>
+The Execution Buttons control the execution of a program in PennSim.
+</p>
+
+<p>
+The "Next" button executes the instruction at the current PC and stops
+when the PC == (current PC + 1).  If the instruction at the current PC
+is a subroutine call instruction (i.e., JSR, JSRR) or a trap
+instruction, the machine will execute instructions until the PC points
+to the instruction <i>after</i> the JSR/JSRR/TRAP at which "Next" was
+called.  "Next" is useful for walking through a program one
+instruction at a time, without going into subroutines and trap
+handlers.
+</p><p>
+
+</p><p>
+The "Step" button is similar to "Next", but it will stop execution
+again after one instruction has been executed. Thus, "Step" follows
+execution <i>into</i> called functions and traps.
+</p>
+
+<p>
+Both "Next" and "Step" follow branch instructions.
+</p>
+
+<p>
+As an example of the results of "Next" versus "Step", consider the
+following code snippet:
+<table width="50%" border="1">
+   <tbody><tr>
+       <td>Address</td>
+       <td>Label</td>
+       <td>Instruction</td>
+   </tr>
+   <tr>
+       <td>x3000</td>
+       <td>START</td>
+       <td>AND R0,R0,#0</td>
+   </tr>
+   <tr>
+       <td>x3001</td>
+       <td></td>
+       <td>JSR FUNCTION</td>
+   </tr>
+   <tr>
+       <td>x3002</td>
+       <td></td>
+       <td>NOT R0,R0</td>
+   </tr>
+   <tr>
+       <td>x3003</td>
+       <td></td>
+       <td>BRz START</td>
+   </tr>
+   <tr>
+       <td>x3004</td>
+       <td></td>
+       <td>HALT</td>
+   </tr>
+   <tr>
+       <td>...</td>
+       <td></td>
+       <td></td>
+   </tr>
+   <tr>
+       <td>x4000</td>
+       <td>FUNCTION</td>
+       <td>ADD R0,R0,#1</td>
+   </tr>
+   <tr>
+       <td>x4001</td>
+       <td></td>
+       <td>RET</td>
+   </tr>
+</tbody></table>
+
+If we set the <span class="command">PC</span> to <span class="command">x3000</span> and hit "Next", we will execute the <span class="command">AND</span> go to the <span class="command">JSR</span>
+instruction. Hitting "Next" again will execute everything in the
+function call, but the simulator won't stop until we reach the <span class="command">NOT</span> instruction, i.e. after the function has
+returned. Hitting "Next" again will follow the branch and take us to
+the START label.
+</p>
+
+<p>
+If we set the <span class="command">PC</span> to <span class="command">x3000</span> and hit "Step", we will go to the <span class="command">JSR</span> instruction, as before. Hitting "Step"
+again will take us to the <span class="command">ADD</span> instruction
+inside the function call. Hitting "Step" one more time takes us to the
+<span class="command">RET</span> instruction, and we have to hit
+"Step" a fourth time to get to the <span class="command">NOT</span>
+instruction, after the function call. Hitting "Step" again will follow
+the branch and take us to the START label, just like "Next" did.
+</p>
+
+<p>
+The "Continue" button starts execution with the instruction at the
+current PC.  The machine will continue to execute instructions until
+the machine halts, a breakpoint (see below) is encountered, or the
+"Stop" button is pressed.
+</p>
+
+The "Stop" button stops execution of the machine.<p>
+
+</p><h5>Machine Status Indicator</h5>
+
+The Machine Status Indicator (located to the right of the Execution
+Buttons) indicates the current state of the machine.  "Halted" means the
+machine is halted (i.e., the "clock enable bit" of the Machine Control
+Register is cleared).  "Suspended" means that the machine is not halted,
+but neither is it running.  In this state you can examine and change the
+state of the machine, then resume execution via the "Next", "Step", or
+"Continue" buttons.  "Running" means that the machine is actively
+executed instructions.<p>
+
+Pressing the "Next", "Step", or "Continue" buttons will cause the
+machine to leave the "Halted" machine state (i.e., the Machine Status
+Indicator will change to "Running" then "Suspended").  If "Stop" is
+pressed while the Machine Status Indicator is "Running", it will change
+to "Suspended."</p><p>
+
+</p><h5>Command Line</h5>
+
+The Command Line (located immediately below the Execution Buttons) is
+used to specify commands to control and monitor the machine.
+Commands are typed on the command line and the command's output (if
+any) appears in the Command Line Output panel (below).  See the
+Control Commands section (below) for a description of all the
+available commands.<p>
+
+</p><h5>Command Line Output panel</h5>
+
+The Command Line Output panel displays the output (if any) of the
+commands entered into the Command Line.  If you resize the PennSim 
+window, the Command Line Output panel grows and shrinks.
+This is useful for making the Command Line Output panel larger so that
+you may better view the output of commands that produce a lot of
+output (e.g., "as").  If you are using a small monitor (e.g.,
+1024x768), open the "Command Output Window" (via the "File" menu).
+The Command Output Window simply mirrors the text in the Command Line
+Output panel.<p>
+
+</p><h4>Registers</h4>
+
+<p>
+The register panel is located on the left half of the screen. The processor has 
+eight general purpose registers, and has a few special
+registers (PC, MPR, PSR, CC). The value of each register is right next
+to its label, and the value can be modified by double-clicking on the
+value and typing in a new value. Values can either be in decimal, or
+in hexadecimal (hexadecimal numbers must be prefixed with an 'x').
+</p>
+
+<p>
+The general purpose registers are freely accessible throughout the
+entire program. Whenever an executed instruction changes the value of
+a register, it will automatically be updated in the Registers display
+panel. It is convenient to be able to monitor the values of registers
+for debugging purposes.
+</p>
+
+<p>
+The special registers on the other hand, cannot be directly referenced
+by the program and special instructions must be used to work with
+them. It is possible to modify their values by hand in the simulator
+though.
+</p>
+
+<p>
+The <strong>PC</strong>, or Program Counter, indicates the address of
+the next instruction to be executed.
+</p>
+
+<p>
+<span class="notabene">NOTE:</span> When PennSim first starts
+up, the PC is automatically set to address x0200. This will generally
+be the location where the operating system begins. Generally we will
+give you an operating system to load into the machine, but we may also
+ask you to write parts of the operating system on your own. When the
+operating system finishes executing, it will then transfer control to
+the user program by jumping to location x3000. This means that
+<strong>all your user programs should begin execution at address
+x3000!</strong> More specifically, unless you are writing the
+operating system, make sure the first line of your program is .ORIG
+x3000.
+</p>
+
+<p>
+The <strong>MPR</strong> is the Memory Protection Register. Each bit
+in the MPR controls whether instructions in a given memory range can
+be executed while in user mode (see <strong>PSR</strong> below) - 1
+means that execution is allowed in a memory range in user mode, 0
+means that it is only allowed in supervisor mode. Trying to execute
+code in a region for which the MPR doesn't allow execution results in
+an exception and will halt execution. Since the MPR is 16 bits, and
+the address space has 2^<super>16</super> = 65,536 memory locations, each bit
+of the MPR controls 4096 (x1000) memory locations. The table below
+shows which regions of memory each MPR bit controls.
+
+<table border="1">
+   <tbody><tr>
+      <th width="50%" scope="col">MPR Bit</th>
+      <th>Memory Region</th>
+   </tr>
+   <tr>
+      <td>MPR[0]</td>
+      <td>x0000 - x0FFF</td>
+   </tr>
+   <tr>
+      <td>MPR[1]</td>
+      <td>x1000 - x1FFF</td>
+   </tr>
+   <tr>
+      <td>MPR[2]</td>
+      <td>x2000 - x2FFF</td>
+   </tr>
+   <tr>
+      <td>...</td>
+      <td>...</td>
+   </tr>
+   <tr>
+      <td>MPR[15]</td>
+      <td>xF000 - xFFFF</td>
+   </tr>
+</tbody></table>
+</p>
+
+<p>
+The <strong>PSR</strong>, or Process Status Register, indicates
+whether the machine is operating in <em>supervisor mode</em> or
+<em>user mode</em>. If supervisor mode is enabled, PSR[15] is
+1. Supervisor mode is enabled only for the operating system code, and
+it allows access to the different devices available to the machine (by
+allowing access to their memory-mapped regions - see MPR
+above). PSR[10:8] specify the priority level of the process being
+executed. PSR[2:0] contain the bits for the condition codes
+(CCs). PSR[2] is N, PSR[1] is Z, PSR[0] is P.
+</p>
+
+<p>
+The <strong>CC</strong><strong>s</strong>, or condition codes, are the
+3 low-order bits of the PSR that give sign information of the most
+recently executed instruction that updated the codes, letting you
+determine whether the value was Negative, Zero, or Positive. These are
+used by the BR instruction in determining when to branch. The
+instructions that update the CCs are: ADD, AND, LD, LDI, LDR, LEA, and
+NOT.
+</p>
+
+<h4>Memory</h4>
+<p>
+The memory locations are on the right half of the screen. Each row
+represents a location in memory, and the row will tell you: if there
+is a breakpoint set at the location, the actual address (and any
+labels that might exist there), the value, and what instruction the
+value represents. Only the value of the memory can be changed by
+double clicking on the current value (similar to changing register
+values).
+</p>
+
+<p>The following table summarizes how memory space is mapped in the machine:</p>
+<table width="50%" border="1">
+  <tbody><tr>
+    <th width="50%" scope="col">Address Range</th>
+    <th width="50%" scope="col">Usage</th>
+  </tr>
+  <tr>
+    <td>x0000 - x00FF </td>
+    <td>Trap Vector Table </td>
+  </tr>
+  <tr>
+    <td>x0100 - x01FF </td>
+    <td>Interrupt Vector Table </td>
+  </tr>
+  <tr>
+    <td>x0200 - x2FFF</td>
+    <td><strong>Operating System</strong></td>
+  </tr>
+  <tr>
+    <td>x3000 - xBFFF </td>
+    <td><strong>User code &amp; stack </strong></td>
+  </tr>
+  <tr>
+    <td>xC000 - xFDFF</td>
+    <td>Video output </td>
+  </tr>
+  <tr>
+    <td>xFE00 - xFFFF </td>
+    <td>Device register addresses </td>
+  </tr>
+</tbody></table>
+<h4>Devices</h4>
+<p>
+A number of devices are available to the simulator. The simulator
+uses memory-mapped device architecture, so accessing a device is just
+like accessing any other memory location. Following is a table that
+summarizes the device locations:
+</p>
+<table width="70%" border="1">
+  <tbody><tr>
+    <th width="13%" scope="col">Address</th>
+    <th width="24%" scope="col">Device Register</th>
+    <th width="63%" scope="col">Usage</th>
+  </tr>
+  <tr>
+    <td>xFE00</td>
+    <td>KBSR</td>
+    <td>Keyboard Status Register: when KBSR[15] is 1, the keyboard has
+    received a new character.</td>
+  </tr>
+  <tr>
+    <td>xFE02</td>
+    <td>KBDR</td>
+    <td>Keyboard Data Register: when a new character is available,
+    KBSR[7:0] contains the ASCII value of the typed character.</td>
+  </tr>
+  <tr>
+    <td>xFE04</td>
+    <td>DSR</td>
+    <td>Display Status Register: when DSR[15] is 1, the display is
+    ready to receive a new character to display.</td>
+  </tr>
+  <tr>
+    <td>xFE06</td>
+    <td>DDR</td>
+    <td>Display Data Register: when the display is ready, the display
+    will print the ASCII character contained in DDR[7:0]. </td>
+  </tr>
+  <tr>
+    <td>xFE08</td>
+    <td>TMR</td>
+    <td>Timer Register: TMR[15] is 1 if the timer has gone off, and 0 otherwise.</td>
+  </tr>
+  <tr>
+    <td>xFE0A</td>
+    <td>TMI</td>
+    <td>Timer Interval Register: the number of milliseconds between
+    timer ticks. Setting this to 0 disables the timer, and setting it
+    to 1 sets the timer to generate "ticks" from "." (period)
+    characters read from the current Text I/O Device (either user
+    input or a file)</td>
+  </tr>
+  <tr>
+    <td>xFE12</td>
+    <td>MPR</td>
+    <td>Memory Protection Register: see <strong>Registers</strong> above.</td>
+  </tr>
+  <tr>
+    <td>xFFFE</td>
+    <td>MCR</td>
+    <td>Machine Control Register: see <strong>Registers</strong> above.</td>
+  </tr>
+</tbody></table>
+<p>
+In addition to these devices, the <strong>video output</strong> is
+also memory-mapped from address location xC000 to xFDFF. The video
+display is 128 by 124 pixels (15,872 pixels total) and the coordinate
+system starts from (0,0) at the top left corner of the display.
+</p>
+<p>
+Since each row is 128 pixels long, in order to find the location
+exactly one row below a given location, at x0080 to it. For example,
+if you are outputting to pixel (3, 10), whose memory location is
+xC18A, then one row immediately below it would be xC20A (=xC18A +
+x0080).
+</p>
+<p>
+As a general rule, this is the formula to find the memory location
+associated with a given (<em>row</em>, <em>col</em>):
+</p>
+<p>
+<strong>addr = xC000 + <em>row</em>*x0080 + <em>col</em></strong>
+</p>
+<p>
+Each video output memory location represents one pixel, which means
+that the value it contains must be formatted as a pixel would be
+(i.e. RGB format):
+</p>
+<table width="23%" border="1">
+  <tbody><tr>
+    <th width="14%" scope="col">[15]</th>
+    <th width="24%" scope="col">[14:10]</th>
+    <th width="30%" scope="col">[9:5]</th>
+    <th width="32%" scope="col">[4:0]</th>
+  </tr>
+  <tr>
+    <td><div align="center">0</div></td>
+    <td><div align="center">RED</div></td>
+    <td><div align="center">GREEN</div></td>
+    <td><div align="center">BLUE</div></td>
+  </tr>
+</tbody></table>
+<p> 
+A value like x7FFF (or xFFFF would work - bit 15 is actually ignored)
+in location xC000 would output a white dot at (0,0). Here are a few
+common colors:
+</p>
+<table width="30%" border="1">
+  <tbody><tr>
+    <th width="50%" scope="col">Pixel Code </th>
+    <th width="50%" scope="col">Color</th>
+  </tr>
+  <tr>
+    <td>x7FFF</td>
+    <td>White</td>
+  </tr>
+  <tr>
+    <td>x0000</td>
+    <td>Black</td>
+  </tr>
+  <tr>
+    <td>x7C00</td>
+    <td>Red</td>
+  </tr>
+  <tr>
+    <td>x03E0</td>
+    <td>Green</td>
+  </tr>
+  <tr>
+    <td>x001F</td>
+    <td>Blue</td>
+  </tr>
+  <tr>
+    <td>x3466</td>
+    <td>Puce</td>
+  </tr>
+</tbody></table>
+<p>&nbsp; </p>
+
+<h3>Control Commands</h3>
+
+<p>
+Below are all the commands that are available on the
+Command Line.
+</p>
+
+<p>
+  </p><div>
+  <span class="command">h[elp] usage: h[elp] [command]</span>
+  </div>
+  <div>
+  Prints a list of all available commands and their syntaxes. Specifying
+  a command will give you a brief description of the command.
+  </div>
+  <div>
+  Example: <span class="command">help list</span> will display help using
+  the <span class="command">list</span> command.
+  </div>
+
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">as - usage: as [-warn] &lt;filename&gt;</span>
+  </div>
+  <div>
+  Assembles &lt;filename&gt; showing errors and (optionally)
+  warnings, and leaves a .obj file in the same directory.
+  </div>
+  <div>
+  Example: <span class="command">as -warn breakout.asm</span>
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">b[reak] - usage: b[reak] [ set | clear ] [
+  mem_addr | label ]</span>
+  </div>
+  <div>
+  Sets or clears break point at specified memory address or label.
+  </div>
+  <div>
+  Example: <span class="command">break set x3000</span> will set a
+  break point at memory location <span class="command">x3000</span>.
+  </div>
+  <div>
+  Example: <span class="command">break clear LABEL</span> will clear a
+  previously set breakpoint at the location pointed to by <span class="command">LABEL</span>.
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">c[ontinue] - usage: c[ontinue]</span>
+  </div>
+  <div>
+  Continues running instructions until next breakpoint is
+  hit.
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">check - usage: check [ count | cumulative | reset | PC | reg | PSR | MPR |
+  mem_addr | label | N | Z | P ] [ value | label ]</span>
+  </div>
+  <div>
+  Verifies that a particular value resides in a register or in a
+  memory location, or that a condition code is set. <span class="command">check count</span> prints the number of checks that
+  passed and failed since the last invocation of <span class="command">check reset</span>.
+    <div>
+    Samples:<br>
+    <span class="command">check r0 17</span> checks that register
+    <span class="command">r0</span> has the value <span class="command">17</span>.<br>
+
+    <span class="command">check PC LABEL</span> checks if the PC points
+    to wherever <span class="command">LABEL</span> points.<br>
+
+    <span class="command">check LABEL x4000</span> checks if the value
+    stored in memory at the location pointed to by <span class="command">LABEL</span> is equal to <span class="command">x4000</span>.<br>
+
+    <span class="command">check x4000 LABEL</span> checks if the value
+    stored in memory at <span class="command">x4000</span> is equal to
+    the location pointed to by <span class="command">LABEL</span>
+    (probably not very useful). To find out where a label points, use
+    <span class="command">list</span> instead.
+    </div>
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">clear - usage: clear</span>
+  </div>
+  <div>
+  Clears the commandline output window. Only available in GUI mode.
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">d[ump] - usage: d[ump] [-check | -coe | -readmemh] from_mem_addr to_mem_addr dumpfile</span>
+  </div>
+  <div>
+  Dumps a range of memory values (range endpoints can be expressed in hex or decimal) to
+  dumpfile as raw values (1 per line). The memory values themselves
+  are in hex. Various flags modify the dumped output format:
+  <div>
+    <span class="command">-check</span>: dump memory as a series of
+      <span class="command">check</span> commands that can be run
+      directly as a sript.
+  </div> 
+  <div>
+    <span class="command">-coe</span>: dump memory as a .coe file,
+    suitable for passing to the Xilinx CORE generator as the initial
+    contents of a memory.
+  </div> 
+  <div>
+    <span class="command">-readmemh</span>: dump memory in a format
+    that can be read by the Verilog system call $readmemh().
+  </div>
+  </div>
+  <div>
+  Example: <span class="command">dump -check x100 x150 addresses.txt</span>
+  </div>
+  <div>
+  Example: <span class="command">dump -coe 20 42 memory.coe</span>
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">input - usage: input &lt;filename&gt;</span>
+  </div>
+  <div>
+  Specifies a file to read the input from instead of keyboard
+  device (simulator must be restarted to restore normal keyboard
+  input).
+  </div>
+  <div>
+  Example: <span class="command">input keystrokes.txt</span>
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">l[ist] - usage: l[ist] [ addr1 | label1 [addr2
+  | label2] ]</span>
+  </div>
+  <div>
+  Lists the contents of memory locations (default address is
+  PC. Specify range by giving 2 arguments).
+  </div>
+  <div>
+  Example: <span class="command">list LABEL</span> will list the
+  contents of memory that is pointed to by <span class="command">LABEL</span>.
+  </div>
+  <div>
+  Example: <span class="command">list x3000 x300A</span> will list the
+  contents of the 11 memory locations between <span class="command">x3000</span> and <span class="command">x300A</span>.
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">l[oa]d - usage: l[oa]d &lt;filename&gt;</span>
+  </div>
+  <div>
+  Loads an object file into the memory.
+  </div>
+  <div>
+  Example: <span class="command">load breakout.obj</span>
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">n[ext] - usage: n[ext]</span>
+  </div>
+  <div>
+  Executes the next instruction.
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">p[rint] - usage: p[rint]</span>
+  </div>
+  <div>
+  Prints out all registers, PC, MPR and PSR.
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">quit - usage: quit</span>
+  </div>
+  <div>
+  Quit the simulator.
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">reset - usage: reset</span>
+  </div>
+  <div>
+  Resets the machine and simulator.
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">s[tep] - usage: s[tep]</span>
+  </div>
+  <div>
+  Steps into the next instruction.
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">script - usage: script &lt;filename&gt;</span>
+  </div>
+  <div>
+  Specifies a file from which to read commands.
+  </div>
+  <div>
+  Example: <span class="command">script myscript.txt</span>
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">set - usage: set [ PC | reg | PSR | MPR |
+  mem_addr | label ] [ value | N | Z | P ]</span>
+  </div>
+  <div>
+  Sets the value of a register/PC/PSR/label/memory_location or
+  set the condition codes individually.
+  </div>
+  <div>
+  Example: <span class="command">set PC x3000</span> sets the <span class="command">PC</span> to point to <span class="command">x3000</span>.
+  </div>
+  <div>
+  Example: <span class="command">set r1 17</span> sets register <span class="command">r0</span> to have the value <span class="command">17</span>.
+  </div>
+  <div>
+  Example: <span class="command">set x4000 -5</span> sets memory
+  location <span class="command">x4000</span> to the value <span class="command">-5</span>.
+  </div>
+  <div>
+  Example: <span class="command">set LABEL x0A</span> sets the value
+  of the memory location pointed to by <span class="command">LABEL</span> to be <span class="command">x0A</span>.
+  </div>
+  <div>
+  Example: <span class="command">set N</span> sets the <span class="command">N</span> condition code.
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">stop - usage: stop</span>
+  </div>
+  <div>
+  Stops execution. You can enter this command after you have started
+  execution with <span class="command">continue</span> to stop execution.
+  </div>
+<p></p>
+
+<p>
+  </p><div>
+  <span class="command">trace - usage: [on trace_file | off]</span>
+  </div>
+  <div>
+   For each instruction executed, this command dumps a subset of
+   processor state to a file, to create a trace that can be used to
+   verify correctness of execution. The state consists of, in order,
+   (1) PC, (2) current insn, (3) regfile write-enable, (4) regfile
+   data in, (5) data memory write-enable, (6) data memory address, and
+   (7) data memory data in. These values are written in hex to
+   trace_file, one line for each instruction executed. Note that
+   trace files can get very large very quickly!  Sometimes a signal
+   may be a don't-care value - if we're not writing to the regfile,
+   the `regfile data in' value is undefined - but the write-enable
+   values should allow don't-care signals to be determined in all
+   cases.
+  </div>
+  <div>
+  Example: <span class="command">trace on my.trace</span> enables
+  tracing. Next, run some instructions. When you're done, run the
+  command <span class="command">trace off</span> to finalize the trace
+  file.
+  </div>
+<p></p>
+
+<hr>
+  
+
+</body></html>
