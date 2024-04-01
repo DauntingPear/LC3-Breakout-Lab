@@ -42,10 +42,10 @@ LD R1,RMAX ; Set inner iterator bound check
 
 LD R4,FOUR
 
-TIMES4
+TopRows
 
   LD R0,ZERO
-  LOOP1
+  DrawTop
 
     STR R7,R5,#0 ; Set pixel color
 
@@ -59,9 +59,9 @@ TIMES4
     ADD R3,R3,#1
     ADD R3,R1,R3
 
-    BRzp LOOP1
+    BRzp DrawTop
 
-  LOOP1_END
+  DrawTop_END
 
   ;; Increment absolute pixel position to next row
   LD R3,NEXTR
@@ -69,9 +69,9 @@ TIMES4
 
   ADD R4,R4,#-1 ; Decrement outer loop iterator
 
-  BRzp TIMES4
+  BRzp TopRows
 
-TIMES4_END
+TopRows_END
 
 ;; <==== Draw Sides ====>
 
@@ -89,21 +89,21 @@ LD R7,RED
 
 LD R4, ONE24
 
-DRAW_SIDES ; Controls for each row
+DrawSides ; Controls for each row
 
   LD R1,FOUR ; Iterator bound
   LD R0,ZERO ; Reset relative pixel counter
 
-  DRAW_LEFT
+  DrawLeft
 
     STR R7,R5,#0 ; Controls drawing pixels in each row
     ADD R0,R0,#1 ; Increment relative counter
     ADD R5,R5,#1 ; Increment absolute counter
 
     ADD R1,R1,#-1
-    BRzp DRAW_LEFT
+    BRzp DrawLeft
 
-  DRAW_LEFT_END
+  DrawLeft_END
 
   ;; Increment absolute pixel position by next side pixel difference
   LD R3,NEXTSIDE
@@ -112,24 +112,24 @@ DRAW_SIDES ; Controls for each row
   LD R1,FOUR
   LD R0,ZERO
 
-  DRAW_RIGHT
+  DrawRight
 
     STR R7,R5,#0 ; Controls drawing pixels in each row
     ADD R0,R0,#1 ; Increment relative counter
     ADD R5,R5,#1 ; Increment absolute counter
 
     ADD R1,R1,#-1
-    BRzp DRAW_RIGHT
+    BRzp DrawRight
 
-  DRAW_RIGHT_END
+  DrawRight_END
 
   LD R3,INCRSIDE
   ADD R5,R5,R3
 
   ADD R4,R4,#-1
-  BRp DRAW_SIDES
+  BRp DrawSides
 
-DRAW_SIDES_END
+DrawSides_END
 
 ;; <==== BRICKS FILL ====>
 
@@ -151,15 +151,15 @@ LD R7,GREEN ; Load pixel color
 ;; ----
 
 LD R4,BRICKHEIGHT ; DRAW_BRICKS iterator
-DRAW_BRICKS ; Loop draws each row for each brick
+DrawBricks ; Loop draws each row for each brick
 
   LD R2, THREE ; DRAW_IN_ROW iterator
-  DRAW_IN_ROW ; Loop used to draw each brick row in row
+  DrawInRow ; Loop used to draw each brick row in row
 
     LD R0,ZERO ; Relative pointer position, used for drawing
     LD R1,BRICKWIDTH ; DRAW_BRICK_ROW iterator
 
-    DRAW_BRICK_ROW ; Loop used to draw the brick row
+    DrawBrickRow ; Loop used to draw the brick row
       STR R7,R5,#0  
 
       ;; Increment pointer position
@@ -167,23 +167,23 @@ DRAW_BRICKS ; Loop draws each row for each brick
       ADD R5,R5,#1
       ADD R1,R1,#-1 ; R1-- decr iterator
       
-      BRzp DRAW_BRICK_ROW ; If length remaining is >= 0 then loop
-    DRAW_BRICK_ROW_END
+      BRzp DrawBrickRow ; If length remaining is >= 0 then loop
+    DrawBrickRow_END
 
     ADD R5,R5,#4
     ADD R2,R2,#-1 ; R2-- decr iterator
-    BRzp DRAW_IN_ROW ; If number of bricks to draw is >= 0 then loop
+    BRzp DrawInRow ; If number of bricks to draw is >= 0 then loop
 
-  DRAW_IN_ROW_END
+  DrawInRow_END
 
   LD R3,BRICKNEXTROW
   ADD R5,R5,R3 ; Set absolute pointer to next row start
   LD R3,ZERO ; Reset register
   ADD R4,R4,#-1 ; R4-- decr iterator
 
-  BRzp DRAW_BRICKS ; If number of rows remaining is >= 0 then loop
+  BRzp DrawBricks ; If number of rows remaining is >= 0 then loop
 
-DRAW_BRICKS_END
+DrawBricks_END
 
 ;; ----
 
