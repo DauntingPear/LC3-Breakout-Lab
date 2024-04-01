@@ -1,0 +1,240 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!-- saved from url=(0539)https://alt-5af6ed3646f67.blackboard.com/bbcswebdav/pid-12734366-dt-content-rid-58836493_1/courses/61306_1248/61306_1248_ImportedContent_20240110100718/31067_1244_ImportedContent_20230822030725/31036_1234_ImportedContent_20220822061514/61702_1228_ImportedContent_20220111114202/31799_1224_ImportedContent_20210823123858/31777_1214_ImportedContent_20200826093508/32794_1204_ImportedContent_20190830105749/Course%20Documents/simulator%20LC3/pennsim-guide.html?one_hash=28279F54078DD3E2E019C834F95163FF&f_hash=8BB540D00D38C3CACB8EB45D4392A551 -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>PennSim Guide</title>
+
+<style type="text/css">
+.command {
+  background-color: LightGrey;
+  color: black;
+  font-family: courier, monospace;
+  padding: 0 2px;
+  white-space: nowrap;
+}
+</style>
+</head>
+
+<body bgcolor="#ffffff">
+
+<h2>A Gentle Guide to Using PennSim</h2>
+<a name="guide"></a>
+
+Copyright notice: This document was originally created by Prof. Milo Martin at University of Pennsylvania.
+
+<h3>0. Conventions</h3>
+<p>
+Throughout this document, commands that you have to type or buttons
+you have to click will appear <span class="command">like so</span>.
+</p>
+
+<h3>1. Getting Java</h3>
+<p>
+PennSim is written in Java, which means Java must be
+installed on the computer you plan to use.  Java should already be
+available on all CAE machines.  If you plan to work on your
+personal machine, you may need to install Java yourself.  You can <a href="http://java.com/en/download/index.jsp">download Java here</a>. PennSim
+ requires Java 1.5 or newer (which is available for
+Windows, Linux, and Mac OS X).
+</p>
+
+<h3>2. Getting the Simulator</h3>
+<p>
+Next, you need to <a href="https://alt-5af6ed3646f67.blackboard.com/bbcswebdav/pid-12734366-dt-content-rid-58836493_1/courses/61306_1248/61306_1248_ImportedContent_20240110100718/31067_1244_ImportedContent_20230822030725/31036_1234_ImportedContent_20220822061514/61702_1228_ImportedContent_20220111114202/31799_1224_ImportedContent_20210823123858/31777_1214_ImportedContent_20200826093508/32794_1204_ImportedContent_20190830105749/Course%20Documents/simulator%20LC3/PennSim.jar">download the simulator</a>. It is distributed in a .jar
+file (short for Java ARchive). In Windows or on a Mac, you
+should be able to double-click the .jar file to launch the
+simulator. You can also launch the simulator from the command line of
+your operating system (such as Linux) by using the command <span class="command">java -jar (jarfile)</span>. You should see the simulator
+screen, much like the screenshot below. 
+
+</p>
+<img src="./PennSim Guide_files/pennsim-simulator.png" alt="PennSim screenshot">
+<br>
+
+
+
+<h3>3. Assembling and Loading Software</h3>
+<p>
+Now the simulator is running, but to get it to do anything
+interesting, we need to load some software. The first piece of
+software we should load is, naturally, an operating system. The LC-3
+operating system is very basic: it handles simple I/O operations and
+is responsible for starting other programs. <a href="https://alt-5af6ed3646f67.blackboard.com/bbcswebdav/pid-12734366-dt-content-rid-58836493_1/courses/61306_1248/61306_1248_ImportedContent_20240110100718/31067_1244_ImportedContent_20230822030725/31036_1234_ImportedContent_20220822061514/61702_1228_ImportedContent_20220111114202/31799_1224_ImportedContent_20210823123858/31777_1214_ImportedContent_20200826093508/32794_1204_ImportedContent_20190830105749/Course%20Documents/simulator%20LC3/lc3os.asm">Download the LC-3 OS
+here</a>.
+</p>
+<p>
+So that you can understand what the operating system does, we
+distribute it as an assembly language file. But the machine
+doesn't understand assembly directly; we first have to 'assemble' the
+assembly code into machine language (a .obj file containing binary
+data). PennSim has a built-in assembler, accessible (as is
+the case for most of its functionality) via the Command Line text box
+(see screenshot above). To assemble the operating system, type <span class="command">as lc3os.asm</span> at PennSim's command line and hit
+enter. Make sure that the OS file is in the current directory; the 
+<span class="command">as</span> command also understands
+relative and absolute paths if the OS is in a different directory. 
+Output from the 
+assembly process is displayed in the CommandLine Output Pane. After
+assembling the OS, you should notice that 2 new files, lc3os.obj and
+lc3os.sym, have been created. The .obj file is the machine language
+encoding of the assembly language file, and the .sym file is a text
+file that holds symbol information so the simulator can display your
+symbols. Recall that symbols are really just a convenience for silly
+humans; the machine language encoding knows only about offsets.
+</p>
+<p>
+Now we can load the lc3os.obj file into the simulator, either via the
+command <span class="command">load lc3os.obj</span> or by going to the
+<span class="command">File</span> menu and selecting <span class="command">Open .obj file</span>. Notice that the contents of the
+memory change when the OS is loaded.
+</p>
+<p>
+Now assemble and load <a href="https://alt-5af6ed3646f67.blackboard.com/bbcswebdav/pid-12734366-dt-content-rid-58836493_1/courses/61306_1248/61306_1248_ImportedContent_20240110100718/31067_1244_ImportedContent_20230822030725/31036_1234_ImportedContent_20220822061514/61702_1228_ImportedContent_20220111114202/31799_1224_ImportedContent_20210823123858/31777_1214_ImportedContent_20200826093508/32794_1204_ImportedContent_20190830105749/Course%20Documents/simulator%20LC3/p0.asm">Example 1</a> into the simulator. The memory has changed again, but you
+may not notice since the relevant memory addresses (starting at x3000)
+aren't visible unless you've scrolled the screen.  User-level programs
+(i.e., non-OS code) start, by convention, at x3000. If you type the
+command <span class="command">list x3000</span> the memory view will
+jump to x3000 and you can see the 1-instruction solution to this
+problem.
+</p>
+
+<h3>4. Running Code</h3>
+<p>
+To actually run code, you can use the 4 control buttons at the top of
+the simulator, or type commands into the command line interface (the
+command names are the same as the buttons). Note that the PC register
+is set to x0200, which is the entry point to the operating system by
+convention. Recall that <a href="https://alt-5af6ed3646f67.blackboard.com/bbcswebdav/pid-12734366-dt-content-rid-58836493_1/courses/61306_1248/61306_1248_ImportedContent_20240110100718/31067_1244_ImportedContent_20230822030725/31036_1234_ImportedContent_20220822061514/61702_1228_ImportedContent_20220111114202/31799_1224_ImportedContent_20210823123858/31777_1214_ImportedContent_20200826093508/32794_1204_ImportedContent_20190830105749/Course%20Documents/simulator%20LC3/p0.asm">Example 
+1</a> increments the value in R2 and puts the result in R5. Set the
+value in R2 to something you fancy, either by double-clicking it in
+the Registers section, or via the command <span class="command">set R2
+(value)</span>. Now, actually run the code by hitting the <span class="command">continue</span> button. The value magically gets
+incremented and moved to R5. Neat-o!  Also observe that the PC now
+points to x0263, an apparently random value somewhere in the operating
+system, and that the Status Display tells us the machine is halted.
+</p>
+
+<h3>4a. Running Code...slowly</h3>
+<p>
+Clearly, some things are going on here. But to determine what they are
+exactly, we need to slow the execution down. You can hit the <span class="command">stop</span> button to pause the machine while it's
+executing, but this doesn't give you very fine-grained control. The
+<span class="command">continue</span> command will start running
+instructions as fast as possible, but often we want to go just one
+instruction at a time. This is what the <span class="command">next</span> and <span class="command">step</span>
+commands allow us to do. They both go one instruction at a time, but the
+<span class="command">step</span> command will "follow" function calls
+and traps, while <span class="command">next</span> just goes from line
+to line, "over" function calls and traps and stopping only at the instruction
+immediately after them. Both <span class="command">next</span> and <span class="command">step</span> will "follow" branches. The <a href="https://alt-5af6ed3646f67.blackboard.com/bbcswebdav/pid-12734366-dt-content-rid-58836493_1/courses/61306_1248/61306_1248_ImportedContent_20240110100718/31067_1244_ImportedContent_20230822030725/31036_1234_ImportedContent_20220822061514/61702_1228_ImportedContent_20220111114202/31799_1224_ImportedContent_20210823123858/31777_1214_ImportedContent_20200826093508/32794_1204_ImportedContent_20190830105749/Course%20Documents/simulator%20LC3/pennsim-manual.html">PennSim Manual</a> has a more involved discussion,
+with an example, of the difference between <span class="command">next</span> and <span class="command">step</span>.
+</p>
+<p>
+Let's try running the program again, but just one instruction at a
+time. Notice that from the halted state, the PC points to an
+instruction that will branch us right back to the start of the
+operating system. So we can hit <span class="command">next</span> once
+and start the cycle over again. Note that registers are as we left
+them. You can put a new value into R2 if you want, and the old value
+in R5 will get overwritten. Sometimes, having old values lying around
+everywhere can be problematic, and it's good to do a real "reboot" via
+the <span class="command">reset</span> command. This clears <i>all</i>
+of memory and resets registers to default values, so you have to
+reload the OS and your program.
+</p>
+<p>
+You can keep <span class="command">next</span>-ing over the OS code;
+eventually you will hit the RTT instruction at location x0205 that
+jumps to the start of our program at x3000. Now you can see the 2
+instructions that constitute our program. You can see the ADD being
+performed, and then the machine gets halted again.
+</p>
+<p>
+Continue running the increment-R2-into-R5 code until, if ever, you get
+bored. 
+</p>
+
+<h3>4b. Running Code...for a little while</h3>
+<a name="guide2"></a>
+<p>
+Going one instruction at a time is great, but somewhat tedious. We
+need a happy medium between not knowing what's going on at all, and
+having to go through every single instruction, whether we care about
+it or not. Breakpoints are this happy medium.
+</p>
+<p>
+A breakpoint is set at a particular memory location, and tells the
+simulator to stop execution upon reaching that point. Memory locations
+with breakpoints set on them show up in the simulator with a red
+square in the "BP" column. It is left as an exercise to the reader to
+determine what "BP" stands for. You can set a breakpoint at a memory
+location with the command <span class="command">break set (memory
+location)</span>, or by checking the checkbox in the "BP" column. You
+can get rid of a previously-set breakpoint with the command <span class="command">break clear (memory location)</span>, or by
+un-checking a previously checked box. You can also set and clear
+breakpoints at labels, instead of specifying a hex memory location.
+</p>
+<p>
+When you tell the simulator to <span class="command">continue</span>,
+it will only run until it hits a breakpoint (or the system halts or
+has an error). When you are writing and testing your own code, you can use the command <span class="command">breakpoint
+set START</span> to set a breakpoint at the beginning of your
+code. Then, you can use <span class="command">continue</span> to skip
+all the OS code and get to the instructions you care about. Then you
+can <span class="command">next</span> over your code to make sure it's
+doing what you want it to do.
+</p>
+
+<h3>5. Running Scripts</h3>
+<p>
+Now try running some of the test scripts that we've provided for
+<a href="https://alt-5af6ed3646f67.blackboard.com/bbcswebdav/pid-12734366-dt-content-rid-58836493_1/courses/61306_1248/61306_1248_ImportedContent_20240110100718/31067_1244_ImportedContent_20230822030725/31036_1234_ImportedContent_20220822061514/61702_1228_ImportedContent_20220111114202/31799_1224_ImportedContent_20210823123858/31777_1214_ImportedContent_20200826093508/32794_1204_ImportedContent_20190830105749/Course%20Documents/simulator%20LC3/p0.asm">Example 1</a> (<a href="https://alt-5af6ed3646f67.blackboard.com/bbcswebdav/pid-12734366-dt-content-rid-58836493_1/courses/61306_1248/61306_1248_ImportedContent_20240110100718/31067_1244_ImportedContent_20230822030725/31036_1234_ImportedContent_20220822061514/61702_1228_ImportedContent_20220111114202/31799_1224_ImportedContent_20210823123858/31777_1214_ImportedContent_20200826093508/32794_1204_ImportedContent_20190830105749/Course%20Documents/simulator%20LC3/p0-test1.lcs">script1</a>
+<a href="https://alt-5af6ed3646f67.blackboard.com/bbcswebdav/pid-12734366-dt-content-rid-58836493_1/courses/61306_1248/61306_1248_ImportedContent_20240110100718/31067_1244_ImportedContent_20230822030725/31036_1234_ImportedContent_20220822061514/61702_1228_ImportedContent_20220111114202/31799_1224_ImportedContent_20210823123858/31777_1214_ImportedContent_20200826093508/32794_1204_ImportedContent_20190830105749/Course%20Documents/simulator%20LC3/p0-test2.lcs">script2</a> 
+<a href="https://alt-5af6ed3646f67.blackboard.com/bbcswebdav/pid-12734366-dt-content-rid-58836493_1/courses/61306_1248/61306_1248_ImportedContent_20240110100718/31067_1244_ImportedContent_20230822030725/31036_1234_ImportedContent_20220822061514/61702_1228_ImportedContent_20220111114202/31799_1224_ImportedContent_20210823123858/31777_1214_ImportedContent_20200826093508/32794_1204_ImportedContent_20190830105749/Course%20Documents/simulator%20LC3/p0-test3.lcs">script3</a>). You can do this with the command <span class="command">script (scriptfile)</span>. The script files just plain text (and the file extension doesn't
+really matter). If you open the script file with a text editor, you can
+see that the script commands are the same as those you type at the
+command line. For repetitive tasks, using a script file can save you
+time, and perhaps the lifelong agony of <a href="http://en.wikipedia.org/wiki/Repetitive_stress_syndrome">Repetitive
+Strain Injury</a>.
+</p>
+<p>
+Scripting is also a great way of testing your code. You can write a
+few test cases and check your code easily, especially for the problems
+in this homework which are pretty easy to test. Use the <span class="command">check</span> command to verify that a value is what
+you think it should be. 
+</p>
+
+<h3>6. General Help and Advice</h3>
+<p>
+This document doesn't cover all of the simulator's functionality; for
+an extended discussion of usage see the 
+<a href="https://alt-5af6ed3646f67.blackboard.com/bbcswebdav/pid-12734366-dt-content-rid-58836493_1/courses/61306_1248/61306_1248_ImportedContent_20240110100718/31067_1244_ImportedContent_20230822030725/31036_1234_ImportedContent_20220822061514/61702_1228_ImportedContent_20220111114202/31799_1224_ImportedContent_20210823123858/31777_1214_ImportedContent_20200826093508/32794_1204_ImportedContent_20190830105749/Course%20Documents/simulator%20LC3/pennsim-manual.html">PennSim Manual</a>. For quick help within the simulator itself,
+you can use the <span class="command">help</span> command to see a
+list of all of PennSim's commands. Use <span class="command">help
+(command)</span> to get help on a specific command.
+</p>
+<p>
+Many of the PennSim commands have shortcuts - <span class="command">b</span> is short for <span class="command">break</span>, <span class="command">n</span> for
+<span class="command">next</span>, and so forth. Use the <span class="command">help</span> (or <span class="command">h</span>)
+command to see what shortcuts exist.
+</p>
+<p>
+The PennSim Command Line has a history feature - use the up and down
+arrow keys to go backwards and forwards through the commands you've
+previously entered.
+</p>
+<p>
+If you resize the simulator window to make it bigger, the Commandline
+Output Pane will grow.  If you have a small screen and the Commandline
+Output Pane still isn't big enough, you can open an external, resizable
+Command Output Window by selecting the <span class="command">Open
+Command Output Window</span> option from the <span class="command">File</span> menu. This lets you see a lot more output
+from the commands you run, and is particularly useful for viewing the
+errors the assembler generates.
+</p>
+<p>
+If you have trouble running the simulator, contact TA by emails or drop by office hours.
+</p>
+
+
+
+</body></html>
