@@ -53,22 +53,17 @@ TopRows
     ADD R5,R5,#1 ; Increment absolute pixel position
 
     ;; Check if relative pixel position has exceeded bounds
-    LD R3,ZERO
-    ADD R3,R3,R0
-    NOT R3,R3
-    ADD R3,R3,#1
-    ADD R3,R1,R3
-
+    ADD,R1,R1,#-1
     BRzp DrawTop
 
   DrawTop_END
 
   ;; Increment absolute pixel position to next row
   LD R3,NEXTR
+  LD R1,RMAX
   ADD R5,R5,R3
 
   ADD R4,R4,#-1 ; Decrement outer loop iterator
-
   BRzp TopRows
 
 TopRows_END
