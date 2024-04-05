@@ -35,7 +35,7 @@ BRp LOOP0 ;
 ;; R1 <- Iterator bound counter
 ;; R0 <- Relative pixel position
 
-LD R5,TOPSTART
+LD R5,VIDEO
 LD R7,RED ; Pixel color
 
 LD R1,RMAX ; Set inner iterator bound check
@@ -67,40 +67,6 @@ TopRows
   BRzp TopRows
 
 TopRows_END
-
-;;
-;; Bottom Row
-;;
-
-LD R5,BOTTOMSTART
-LD R7,RED ; Pixel color
-
-LD R1,RMAX ; Set inner iterator bound check
-
-LD R4,FOUR
-
-BottomRows
-
-  LD R0,ZERO
-  DrawBottom
-
-    STR R7,R5,#0 ; Set pixel color
-
-    ADD R0,R0,#1
-    ADD R5,R5,#1
-
-    ADD R1,R1,#-1
-    BRzp DrawBottom
-  DrawBottom_END
-
-  LD R3,NEXTR
-  LD R1,RMAX
-  ADD R5,R5,R3
-
-  ADD R4,R4,#-1
-  BRzp BottomRows
-
-BottomRows_END
 
 ;; <==== Draw Sides ====>
 
@@ -214,30 +180,9 @@ DrawBricks ; Loop draws each row for each brick
 
 DrawBricks_END
 
+;; ----
+
 HALT
-
-	LD R0, BALL_X		; X coordinate of ball starts at location 5	
-	LD R1, BALL_Y		; Y coordinate of ball starts at location 5
-	LD R2, BALL_COLOR	
-	TRAP x40			; Trap to OS to draw the ball
-
-;;
-;; Game Loop
-;;
-GameLoop	; This label is used as the main game loop, so return here as long as there are still bricks in the game!
-	; Put some delay to slow down the ball
-	LD R6, DELAY	
-	JSR DELAY_LOOP
-
-  HALT
-
-  BRnzp GameLoop
-GameLoop_END
-
-DELAY_LOOP
-	ADD R6,R6,#-1
-	BRp DELAY_LOOP
-	RET
 
 ;;And now define all the constants we need...
 VIDEO .FILL xC000
@@ -258,19 +203,17 @@ FOUR .FILL x0003
 THREE .FILL x0002
 EIGHT .FILL x0008
 
-TOPSTART .FILL xC000
-BOTTOMSTART .FILL xFC00
 NEXTR .FILL x002C
 RMAX .FILL x0053
 NEXTC .FILL x007C
-NEXTSIDE .FILL x0050
-INCRSIDE .FILL x0028
+NEXTSIDE .FILL x004C
+INCRSIDE .FILL x002C
 
 BRICKSTART .FILL x0408
 BRICKHEIGHT .FILL x0004
 BRICKSPACE .FILL x0004
-BRICKWIDTH .FILL x0014
-BRICKNEXTROW .FILL x0035
+BRICKWIDTH .FILL x0013
+BRICKNEXTROW .FILL x0038
 
 SIDE .FILL xC200
 .end
