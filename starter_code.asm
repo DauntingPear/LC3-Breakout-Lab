@@ -214,10 +214,31 @@ DrawBricks ; Loop draws each row for each brick
 
 DrawBricks_END
 
-;; ----
-
 HALT
-	
+
+	LD R0, BALL_X		; X coordinate of ball starts at location 5	
+	LD R1, BALL_Y		; Y coordinate of ball starts at location 5
+	LD R2, BALL_COLOR	
+	TRAP x40			; Trap to OS to draw the ball
+
+;;
+;; Game Loop
+;;
+GameLoop	; This label is used as the main game loop, so return here as long as there are still bricks in the game!
+	; Put some delay to slow down the ball
+	LD R6, DELAY	
+	JSR DELAY_LOOP
+
+  HALT
+
+  BRnzp GameLoop
+GameLoop_END
+
+DELAY_LOOP
+	ADD R6,R6,#-1
+	BRp DELAY_LOOP
+	RET
+
 ;;And now define all the constants we need...
 VIDEO .FILL xC000
 DISPSIZE .FILL x2E00
