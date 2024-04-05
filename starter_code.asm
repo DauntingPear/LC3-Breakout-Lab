@@ -35,7 +35,7 @@ BRp LOOP0 ;
 ;; R1 <- Iterator bound counter
 ;; R0 <- Relative pixel position
 
-LD R5,VIDEO
+LD R5,TOPSTART
 LD R7,RED ; Pixel color
 
 LD R1,RMAX ; Set inner iterator bound check
@@ -67,6 +67,40 @@ TopRows
   BRzp TopRows
 
 TopRows_END
+
+;;
+;; Bottom Row
+;;
+
+LD R5,BOTTOMSTART
+LD R7,RED ; Pixel color
+
+LD R1,RMAX ; Set inner iterator bound check
+
+LD R4,FOUR
+
+BottomRows
+
+  LD R0,ZERO
+  DrawBottom
+
+    STR R7,R5,#0 ; Set pixel color
+
+    ADD R0,R0,#1
+    ADD R5,R5,#1
+
+    ADD R1,R1,#-1
+    BRzp DrawBottom
+  DrawBottom_END
+
+  LD R3,NEXTR
+  LD R1,RMAX
+  ADD R5,R5,R3
+
+  ADD R4,R4,#-1
+  BRzp BottomRows
+
+BottomRows_END
 
 ;; <==== Draw Sides ====>
 
@@ -183,7 +217,7 @@ DrawBricks_END
 ;; ----
 
 HALT
-
+	
 ;;And now define all the constants we need...
 VIDEO .FILL xC000
 DISPSIZE .FILL x2E00
@@ -203,17 +237,19 @@ FOUR .FILL x0003
 THREE .FILL x0002
 EIGHT .FILL x0008
 
+TOPSTART .FILL xC000
+BOTTOMSTART .FILL xFC00
 NEXTR .FILL x002C
 RMAX .FILL x0053
 NEXTC .FILL x007C
-NEXTSIDE .FILL x004C
-INCRSIDE .FILL x002C
+NEXTSIDE .FILL x0050
+INCRSIDE .FILL x0028
 
 BRICKSTART .FILL x0408
 BRICKHEIGHT .FILL x0004
 BRICKSPACE .FILL x0004
-BRICKWIDTH .FILL x0013
-BRICKNEXTROW .FILL x0038
+BRICKWIDTH .FILL x0014
+BRICKNEXTROW .FILL x0035
 
 SIDE .FILL xC200
 .end
