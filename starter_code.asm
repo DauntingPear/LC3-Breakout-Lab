@@ -131,16 +131,16 @@ BrickSR
 
   ST R7,TEMP ; Store program return
 
-  LD R7,BRICK_WIDTH
+  LD R7,BRICK_WIDTH ; Load width of brick
 
-  LD R4,FOUR
+  LD R4,FOUR ; Iterator 1 -> Controls for number of rows to draw
   DrawBrickHeight:
 
     AND R6,R6,0
-    ADD R6,R6,#2
+    ADD R6,R6,#2 ; Iterator 2 -> Controls for Number of bricks in a row
     DrawBrick:
 
-      LD R3,BRICK_WIDTH
+      LD R3,BRICK_WIDTH ; Iterator 3 -> Controls for width of brick
       ADD R5,R5,#4
 
       DrawBrickRow:
