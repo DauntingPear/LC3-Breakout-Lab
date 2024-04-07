@@ -13,12 +13,12 @@ START: ;; CLEAR THE SCREEN
 
   LD R5,VIDEO
   LD R2,RED
-  PUTS
   JSR DrawTopSR
   JSR DrawSideSR
   JSR DrawBottomSR
-  LD R3,BRICK1
-  JSR DrawBrickSR
+
+  LD R2,GREEN
+  JSR BrickSR
 HALT
 
 ;; Subroutines needed:
@@ -125,23 +125,23 @@ DrawBottomSR
 
 ;; Draw Bricks
 BrickSR
-  LD R5,VIDEO
-  ST R7,TEMP
+  LD R5,VIDEO ; Load first pixel location
+  LD R3,BRICKOFFSET ; Load brick offset
   ADD R5,R5,R3 ; Adds brick offset position
 
-  LD R7,BRICK_WIDTH
-  NOT R7,R7
-  ADD R7,R7,#1
-  AND R3,R3,#0
-  ADD R3,R3,R7
+  ST R7,TEMP ; Store program return
 
-  AND R6,R6,#0
-  ADD R6,R6,R7
-  ADD R3,R3,#-1
+  LD R7,BRICK_WIDTH
 
   LD R4,FOUR
   DrawBrickHeight:
-    LD R3,BRICK_WIDTH
+
+    AND R6,R6,0
+    ADD R6,R6,#2
+    DrawBrick:
+
+      LD R3,BRICK_WIDTH
+      ADD R5,R5,#4
 
       DrawBrickRow:
         STR R2,R5,#0
@@ -149,7 +149,11 @@ BrickSR
         ADD R3,R3,#-1
         BRp DrawBrickRow
 
-    ADD R5,R5,#5
+      ADD R6,R6,#-1
+      BRzp DrawBrick
+
+    LD R6,NEXTBRICKROW
+    ADD R5,R5,R6
 
     ADD R4,R4,#-1
     BRzp DrawBrickHeight
@@ -161,6 +165,8 @@ BrickSR
 ;; <======== Hardcoded values ========>
 ;;
 BOX_ROW_WIDTH .FILL 84
+NEXTBRICKROW .FILL x0038
+BRICKOFFSET .FILL x0404
 TEMP .FILL 0
 BRICKNUM .FILL 0
 
