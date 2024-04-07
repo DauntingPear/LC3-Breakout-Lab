@@ -21,13 +21,9 @@ START: ;; CLEAR THE SCREEN
   JSR BrickSR
 HALT
 
-;; Subroutines needed:
-;; - Draw box row
-;; - Draw box column
-;; - Draw Brick
-;; - Clear frame
-
+;;
 ;; Initialize frame buffer
+;;
 InitFrameBufferSR
   LD R5,VIDEO ; R5 <- pointer to where pixels will be written
   LD R2,BLACK ; Pixel color value
@@ -39,7 +35,9 @@ InitFrameBufferSR
     BRp DrawBuffer
   RET
 
+;;
 ;; Draw box row
+;;
 DrawTopSR
   LD R5,VIDEO ; Pointer to where pixels will be written
   ST R7,TEMP ; Store program execution spot
@@ -62,7 +60,9 @@ DrawTopSR
   LD R7,TEMP ; Load return value
   RET
 
+;;
 ;; Draw Sides
+;;
 DrawSideSR
   LD R5,VIDEO ; Pointer to where pixels will be written
   LD R3,SIDESTART ; First pixel offset
@@ -98,7 +98,9 @@ DrawSideSR
   LD R7,TEMP
   RET
 
+;;
 ;; Draw Bottom
+;;
 DrawBottomSR
   LD R5,VIDEO
   LD R3,BOTTOMSTART
@@ -123,7 +125,9 @@ DrawBottomSR
   LD R7,TEMP
   RET
 
+;;
 ;; Draw Bricks
+;;
 BrickSR
   LD R5,VIDEO ; Load first pixel location
   LD R3,BRICKOFFSET ; Load brick offset
@@ -162,7 +166,7 @@ BrickSR
 
 
 ;;
-;; <======== Hardcoded values ========>
+;; Game Loop
 ;;
 
 
@@ -189,7 +193,9 @@ DELAY_LOOP
 	BRp DELAY_LOOP
 	RET
 
-;;And now define all the constants we need...
+;;
+;; <======== Hardcoded values ========>
+;;
 VIDEO .FILL xC000
 DISPSIZE .FILL x2E00
 DISPWIDTH .FILL x0080
