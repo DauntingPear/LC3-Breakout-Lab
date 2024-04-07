@@ -18,7 +18,7 @@ START: ;; CLEAR THE SCREEN
   JSR DrawSideSR
   JSR DrawBottomSR
   LD R3,BRICK1
-  JSR DrawBrick
+  JSR DrawBrickSR
 HALT
 
 ;; Subroutines needed:
@@ -31,51 +31,47 @@ HALT
 InitFrameBufferSR
   LD R5,VIDEO ; R5 <- pointer to where pixels will be written
   LD R2,BLACK ; Pixel color value
-  LD R3,DISPSIZE
+  LD R3,DISPSIZE ; Total number of pixels in the display - Iterator value
   DrawBuffer:
-    STR R2,R5,#0
-    ADD R5,R5,#1
-    ADD R3,R3,#-1
+    STR R2,R5,#0 ; Set pixel color
+    ADD R5,R5,#1 ; Increment pixel
+    ADD R3,R3,#-1 ; Decrement iterator
     BRp DrawBuffer
-  ST R7,TEMP
-  LEA R0, DB1
-  PUTS
-  LD R7,TEMP
   RET
 
 ;; Draw box row
 DrawTopSR
+  LD R5,VIDEO ; Pointer to where pixels will be written
+  ST R7,TEMP ; Store program execution spot
+  LD R4,FOUR ; Iterator 1
 
-  LD R5,VIDEO
-  ST R7,TEMP
-  LD R4,FOUR
   DrawTopHeight:
+    LD R3,BOX_ROW_WIDTH ; Iterator 2
 
-    LD R3,BOX_ROW_WIDTH
     DrawTopRow:
-
-      STR R2,R5,#0
-      ADD R5,R5,#1
-      ADD R3,R3,#-1
+      STR R2,R5,#0 ; Set pixel color
+      ADD R5,R5,#1 ; Increment pixel
+      ADD R3,R3,#-1 ; Decrement iterator
       BRp DrawTopRow
 
-    LD R3,NEXTROW
-    ADD R5,R5,R3
+    LD R3,NEXTROW ; Load nextrow offset value
+    ADD R5,R5,R3 ; Increment pixel value by offset
 
-    ADD R4,R4,#-1
+    ADD R4,R4,#-1 ; Decrement iterator
     BRzp DrawTopHeight
-  LD R7,TEMP
+  LD R7,TEMP ; Load return value
   RET
 
+;; Draw Sides
 DrawSideSR
-  LD R5,VIDEO
-  LD R3,SIDESTART
-  ADD R5,R5,R3
+  LD R5,VIDEO ; Pointer to where pixels will be written
+  LD R3,SIDESTART ; First pixel offset
+  ADD R5,R5,R3 ; Increment pointer by offset
 
-  ST R7,TEMP
-  LD R4,SIDEHEIGHT
+  ST R7,TEMP ; Store return address
+  LD R4,SIDEHEIGHT ; Iterator 1
   DrawSideHeight:
-    LD R3,FOUR
+    LD R3,FOUR ; Iterator 2
 
     DrawLeftSideRow:
       STR R2,R5,#0
@@ -83,10 +79,10 @@ DrawSideSR
       ADD R3,R3,#-1
       BRzp DrawLeftSideRow
 
-    LD R3,NEXTSIDE
-    ADD R5,R5,R3
+    LD R3,NEXTSIDE ; Load next side offset
+    ADD R5,R5,R3 ; Increment by offset
 
-    LD R3,FOUR
+    LD R3,FOUR ; Iterator 2
 
     DrawRightSideRow:
       STR R2,R5,#0
@@ -94,15 +90,15 @@ DrawSideSR
       ADD R3,R3,#-1
       BRzp DrawRightSideRow
 
-    LD R3,NEXTROW
-    ADD R5,R5,R3
+    LD R3,NEXTROW ; Load next row offset
+    ADD R5,R5,R3 ; Increment by offset
     
-    ADD R4,R4,#-1
+    ADD R4,R4,#-1 ; Decrement iterator
     BRp DrawSideHeight
   LD R7,TEMP
   RET
 
-
+;; Draw Bottom
 DrawBottomSR
   LD R5,VIDEO
   LD R3,BOTTOMSTART
@@ -127,16 +123,22 @@ DrawBottomSR
   LD R7,TEMP
   RET
 
-DrawBrick
+;; Draw Bricks
+BrickSR
   LD R5,VIDEO
+  ST R7,TEMP
   ADD R5,R5,R3 ; Adds brick offset position
 
-  LD R6,DISPWIDTH
-  NOT R3,R3
-  ADD R3,R3,#-1
-  ADD R6,R6,R3
+  LD R7,BRICK_WIDTH
+  NOT R7,R7
+  ADD R7,R7,#1
+  AND R3,R3,#0
+  ADD R3,R3,R7
 
-  ST R7,TEMP
+  AND R6,R6,#0
+  ADD R6,R6,R7
+  ADD R3,R3,#-1
+
   LD R4,FOUR
   DrawBrickHeight:
     LD R3,BRICK_WIDTH
@@ -147,14 +149,12 @@ DrawBrick
         ADD R3,R3,#-1
         BRp DrawBrickRow
 
-    ADD R5,R5,R6
+    ADD R5,R5,#5
 
     ADD R4,R4,#-1
     BRzp DrawBrickHeight
   LD R7,TEMP
   RET
-
-  
 
 
 ;;
@@ -162,6 +162,7 @@ DrawBrick
 ;;
 BOX_ROW_WIDTH .FILL 84
 TEMP .FILL 0
+BRICKNUM .FILL 0
 
 
 	LD R0, BALL_X		; X coordinate of ball starts at location 5	
