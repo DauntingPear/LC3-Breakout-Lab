@@ -41,9 +41,16 @@ START: ;; CLEAR THE SCREEN
   
 HALT
 
-;;
-;; Initialize frame buffer
-;;
+;; === Initialize frame buffer ===
+;; R0
+;; R1
+;; R2 -> Color
+;; R3 -> Iterator value (total pixel count)
+;; R4
+;; R5 -> Pixel location
+;; R6
+;; R7 -> Return address
+;----------------------------
 InitFrameBufferSR
   LD R5,VIDEO ; R5 <- pointer to where pixels will be written
   LD R2,BLACK ; Pixel color value
@@ -147,7 +154,9 @@ DrawBallSR
   LD R7,TEMP
   RET
 
-
+;;
+;; Game Loop
+;;
 GameLoopSR
   GameLoop	; This label is used as the main game loop, so return here as long as there are still bricks in the game!
     ; Put some delay to slow down the ball
@@ -170,6 +179,9 @@ GameLoopSR
 
     BRnzp GameLoop
 
+;;
+;; Delay Loop
+;;
 DelayLoopSR
   DelayLoop:
 	ADD R6,R6,#-1
