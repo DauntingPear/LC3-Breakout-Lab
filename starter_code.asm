@@ -40,56 +40,37 @@ InitFrameBufferSR
 ;; Draw box row
 ;;
 DrawTopSR
-	LD R4,TOPWIDTH	; We need 4 such rows of length 84 decimal each
+	LD R4,WIDTH	; We need 4 such rows of length 84 decimal each
 	AND R0,R0, #0
 	LD R1, ZERO
 	
 	ST R7, TEMP
-TOP_LOOP:
-	TRAP x40
-	ADD R0, R0, #1
-	ADD R4, R4, #-1
-	BRp TOP_LOOP;	
-	LD R7, TEMP
-	RET
+  DrawTop:
+    TRAP x40
+    ADD R0, R0, #1
+    ADD R4, R4, #-1
+    BRp TOP_LOOP;	
+    LD R7, TEMP
+    RET
 
 ;;
-;; Draw Sides
-;;
+;; === Draw Sides ===
+;; R0 -> Column
+;; R1 -> Row
+;; R2 -> Color
+;; R3 -> Height Iteration Counter
+;; R5 -> Width Iteration counter
+;; R6
+;; R7
+;----------------------------
 DrawSideSR
-  LD R5,VIDEO ; Pointer to where pixels will be written
-  LD R3,SIDESTART ; First pixel offset
-  ADD R5,R5,R3 ; Increment pointer by offset
-
-  ST R7,TEMP ; Store return address
-  LD R4,SIDEHEIGHT ; Iterator 1
-  DrawSideHeight:
-    LD R3,FOUR ; Iterator 2
-
-    DrawLeftSideRow:
-      STR R2,R5,#0
-      ADD R5,R5,#1
-      ADD R3,R3,#-1
-      BRzp DrawLeftSideRow
-
-    LD R3,NEXTSIDE ; Load next side offset
-    ADD R5,R5,R3 ; Increment by offset
-
-    LD R3,FOUR ; Iterator 2
-
-    DrawRightSideRow:
-      STR R2,R5,#0
-      ADD R5,R5,#1
-      ADD R3,R3,#-1
-      BRzp DrawRightSideRow
-
-    LD R3,NEXTROW ; Load next row offset
-    ADD R5,R5,R3 ; Increment by offset
-    
-    ADD R4,R4,#-1 ; Decrement iterator
-    BRp DrawSideHeight
-  LD R7,TEMP
-  RET
+  AND R1,R1,#0
+  ADD R1,R1,#1
+  LD R3,SIDEHEIGHT
+  LD R5,WIDTH
+  ADD R5,R5,#-1
+  ST R7,TEMP
+  DRAW_LOOP
 
 ;;
 ;; Draw Bottom
@@ -194,7 +175,7 @@ DISPSIZE .FILL x3E00
 DISPWIDTH .FILL x0080
 BOX_ROW_WIDTH .FILL 84
 
-TOPWIDTH .FILL 21
+WIDTH .FILL 21
 
 ZERO .FILL x0000
 EIGHTY .FILL x0050
