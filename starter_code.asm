@@ -147,7 +147,9 @@ DrawBallSR
   LD R7,TEMP
   RET
 
-
+;;
+;; Game Loop
+;;
 GameLoopSR
   GameLoop	; This label is used as the main game loop, so return here as long as there are still bricks in the game!
     ; Put some delay to slow down the ball
