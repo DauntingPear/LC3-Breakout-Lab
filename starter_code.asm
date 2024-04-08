@@ -172,6 +172,9 @@ GameLoopSR
 
     BRnzp GameLoop
 
+;;
+;; Delay Loop
+;;
 DelayLoopSR
   DelayLoop:
 	ADD R6,R6,#-1
