@@ -708,6 +708,11 @@ DB_R6: .FILL x0
 DB_R7: .FILL x0        
                 
 DRAW_BLOCK:     
+        ; 1)	DRAW_BLOCK	(TRAP	x40)
+            ; Input	r0	column	in	field	(x)
+            ; r1	row	in	field	(y)
+            ; r2	color	Output
+            ; video	memory	will	be	updated	to	place	block	of	appropriate	color
         ; Register Saving
         ST R0,DB_R0
         ST R1,DB_R1
@@ -720,22 +725,25 @@ DRAW_BLOCK:
         
         ; *** INSERT CODE FOR PART 1 HERE ***
         ;; ~25 lines of code or so
+        
 
-        MUL R3, R0, #4
-        MUL R4, R1, #4
+        MUL R3, R0, #4 ; Multiply column in field pixel by 4 (4x4 pixels), store in r3
+        MUL R4, R1, #4 ; multiply row in field pixel by 4 (4x4 pixels), store in r4
 	  
 	  LD R0, VIDEO_MEM_BEGIN
         LD R1, VIDEO_ROW_SIZE
         AND R5, R5, #0
 LOOP_FOUR:
-	  ADD R6, R4, R5
-        MUL R6, R6, R1
-        ADD R6, R6, R3
-        ADD R6, R6, R0 
-        STR R2, R6, #0
-	  STR R2, R6, #1
-        STR R2, R6, #2  
-        STR R2, R6, #3  
+	  ADD R6, R4, R5 ; add relative pixel (r5) to abstract row (r4) and store in r6
+        MUL R6, R6, R1 ; multiply this by the video size (128,r1) to get actual pixel value
+        ADD R6, R6, R3 ; add actual pixel value to r3
+        ADD R6, R6, R0 ; increment actual pixel value by abstract position
+
+        STR R2, R6, #0 ; absolute pixel 0 in current row change color
+	      STR R2, R6, #1 ; absolute pixel 1 in current row change color
+        STR R2, R6, #2 ; absolute pixel 2 in current row change color
+        STR R2, R6, #3 ; absolute pixel 3 in current row change color
+
         ADD R5, R5, #1
         ADD R6, R5, #-4
         BRn LOOP_FOUR

@@ -12,6 +12,7 @@ START: ;; CLEAR THE SCREEN
   JSR InitFrameBufferSR
 
   LD R5,VIDEO
+  LD R1,RMAX
   LD R2,RED
   JSR DrawTopSR
   JSR DrawSideSR
@@ -39,62 +40,44 @@ InitFrameBufferSR
 ;; Draw box row
 ;;
 DrawTopSR
-  LD R5,VIDEO ; Pointer to where pixels will be written
-  ST R7,TEMP ; Store program execution spot
-  LD R4,FOUR ; Iterator 1
-
-  DrawTopHeight:
-    LD R3,BOX_ROW_WIDTH ; Iterator 2
-
-    DrawTopRow:
-      STR R2,R5,#0 ; Set pixel color
-      ADD R5,R5,#1 ; Increment pixel
-      ADD R3,R3,#-1 ; Decrement iterator
-      BRp DrawTopRow
-
-    LD R3,NEXTROW ; Load nextrow offset value
-    ADD R5,R5,R3 ; Increment pixel value by offset
-
-    ADD R4,R4,#-1 ; Decrement iterator
-    BRzp DrawTopHeight
-  LD R7,TEMP ; Load return value
-  RET
+	LD R4,WIDTH	; We need 4 such rows of length 84 decimal each
+	AND R0,R0, #0
+	LD R1, ZERO
+	
+	ST R7, TEMP
+  DrawTop:
+    TRAP x40
+    ADD R0, R0, #1
+    ADD R4, R4, #-1
+    BRp DrawTop;	
+    LD R7, TEMP
+    RET
 
 ;;
-;; Draw Sides
-;;
+;; === Draw Sides ===
+;; R0 -> Column
+;; R1 -> Row
+;; R2 -> Color
+;; R3 -> Height Iteration Counter
+;; R5 -> Side distance between offset
+;; R6
+;; R7
+;----------------------------
 DrawSideSR
-  LD R5,VIDEO ; Pointer to where pixels will be written
-  LD R3,SIDESTART ; First pixel offset
-  ADD R5,R5,R3 ; Increment pointer by offset
-
-  ST R7,TEMP ; Store return address
-  LD R4,SIDEHEIGHT ; Iterator 1
-  DrawSideHeight:
-    LD R3,FOUR ; Iterator 2
-
-    DrawLeftSideRow:
-      STR R2,R5,#0
-      ADD R5,R5,#1
-      ADD R3,R3,#-1
-      BRzp DrawLeftSideRow
-
-    LD R3,NEXTSIDE ; Load next side offset
-    ADD R5,R5,R3 ; Increment by offset
-
-    LD R3,FOUR ; Iterator 2
-
-    DrawRightSideRow:
-      STR R2,R5,#0
-      ADD R5,R5,#1
-      ADD R3,R3,#-1
-      BRzp DrawRightSideRow
-
-    LD R3,NEXTROW ; Load next row offset
-    ADD R5,R5,R3 ; Increment by offset
-    
-    ADD R4,R4,#-1 ; Decrement iterator
-    BRp DrawSideHeight
+  AND R1,R1,#0
+  ADD R1,R1,#1
+  LD R3,SIDEHEIGHT
+  LD R5,WIDTH
+  ADD R5,R5,#-1
+  ST R7,TEMP
+  DrawSide:
+    AND R0,R0,#0 ; Set Column pointer
+    TRAP x40 ; Draw Left Side
+    ADD R0,R0,R5
+    TRAP x40 ; Draw Right Side
+    ADD R1,R1,#1 ; Increment Row
+    ADD R3,R3,#-1 ; Decrement iterator
+    BRp DrawSide
   LD R7,TEMP
   RET
 
@@ -197,14 +180,16 @@ DELAY_LOOP
 ;; <======== Hardcoded values ========>
 ;;
 VIDEO .FILL xC000
-DISPSIZE .FILL x2E00
+DISPSIZE .FILL x3E00
 DISPWIDTH .FILL x0080
 BOX_ROW_WIDTH .FILL 84
+
+WIDTH .FILL 21
 
 ZERO .FILL x0000
 EIGHTY .FILL x0050
 TWENTY .FILL x0014
-SIDEHEIGHT .FILL x0078
+SIDEHEIGHT .FILL 30
 
 RED .FILL x7C00
 BLACK .FILL x0000
