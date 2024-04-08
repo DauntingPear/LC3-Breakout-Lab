@@ -85,26 +85,19 @@ DrawSideSR
 ;; Draw Bottom
 ;;
 DrawBottomSR
-  LD R5,VIDEO
-  LD R3,BOTTOMSTART
-  ADD R5,R5,R3
+  LD R0,ZERO
+  LD R1,ZERO
+  LD R4,WIDTH
+  LD R3,SIDEHEIGHT
+  ADD R1,R1,R3
+  LD R3,ZERO
 
   ST R7,TEMP
-  LD R4,FOUR
-  DrawBottomHeight:
-    LD R3,BOX_ROW_WIDTH
-
-    DrawBottomRow:
-      STR R2,R5,#0
-      ADD R5,R5,#1
-      ADD R3,R3,#-1
-      BRp DrawBottomRow
-
-    LD R3,NEXTROW
-    ADD R5,R5,R3
-
+  DrawBottom:
+    TRAP x40
+    ADD R0,R0,#1
     ADD R4,R4,#-1
-    BRzp DrawBottomHeight
+    BRp DrawBottom
   LD R7,TEMP
   RET
 
