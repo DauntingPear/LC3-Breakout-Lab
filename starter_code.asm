@@ -13,6 +13,8 @@ START: ;; CLEAR THE SCREEN
 
   LD R5,VIDEO
   LD R2,RED
+
+  ; Draw Sides
   JSR DrawTopSR
   JSR DrawSideSR
   JSR DrawBottomSR
@@ -32,6 +34,10 @@ START: ;; CLEAR THE SCREEN
   JSR DrawBrickSR
   ADD R0,R0,#1
   JSR DrawBrickSR
+
+  JSR DrawBallSR
+
+  ; Game Loop
   
 HALT
 
@@ -129,21 +135,20 @@ DrawBrickSR
   LD R7,TEMP
   RET
   
-
-
 ;;
-;; Game Loop
+;; Draw Ball
 ;;
+DrawBallSR
+  LD R0, BALL_X		; X coordinate of ball starts at location 5	
+  LD R1, BALL_Y		; Y coordinate of ball starts at location 5
+  LD R2, BALL_COLOR	
+  ST R7,TEMP
+  TRAP x40			; Trap to OS to draw the ball
+  LD R7,TEMP
+  RET
 
 
-	LD R0, BALL_X		; X coordinate of ball starts at location 5	
-	LD R1, BALL_Y		; Y coordinate of ball starts at location 5
-	LD R2, BALL_COLOR	
-	TRAP x40			; Trap to OS to draw the ball
-
-;;
-;; Game Loop
-;;
+GameLoopSR
 GameLoop	; This label is used as the main game loop, so return here as long as there are still bricks in the game!
 	; Put some delay to slow down the ball
 	LD R6, DELAY	
