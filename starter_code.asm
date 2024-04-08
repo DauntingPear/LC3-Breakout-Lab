@@ -49,7 +49,7 @@ DrawTopSR
     TRAP x40
     ADD R0, R0, #1
     ADD R4, R4, #-1
-    BRp TOP_LOOP;	
+    BRp DrawTop;	
     LD R7, TEMP
     RET
 
