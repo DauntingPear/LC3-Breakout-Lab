@@ -13,6 +13,8 @@ START: ;; CLEAR THE SCREEN
 
   LD R5,VIDEO
   LD R2,RED
+
+  ; Draw Sides
   JSR DrawTopSR
   JSR DrawSideSR
   JSR DrawBottomSR
@@ -32,6 +34,10 @@ START: ;; CLEAR THE SCREEN
   JSR DrawBrickSR
   ADD R0,R0,#1
   JSR DrawBrickSR
+
+  JSR DrawBallSR
+
+  ; Game Loop
   
 HALT
 
@@ -129,34 +135,45 @@ DrawBrickSR
   LD R7,TEMP
   RET
   
-
-
 ;;
-;; Game Loop
+;; Draw Ball
 ;;
+DrawBallSR
+  LD R0, BALL_X		; X coordinate of ball starts at location 5	
+  LD R1, BALL_Y		; Y coordinate of ball starts at location 5
+  LD R2, BALL_COLOR	
+  ST R7,TEMP
+  TRAP x40			; Trap to OS to draw the ball
+  LD R7,TEMP
+  RET
 
 
-	LD R0, BALL_X		; X coordinate of ball starts at location 5	
-	LD R1, BALL_Y		; Y coordinate of ball starts at location 5
-	LD R2, BALL_COLOR	
-	TRAP x40			; Trap to OS to draw the ball
+GameLoopSR
+  GameLoop	; This label is used as the main game loop, so return here as long as there are still bricks in the game!
+    ; Put some delay to slow down the ball
+    LD R6, DELAY	
+    JSR DelayLoopSR
 
-;;
-;; Game Loop
-;;
-GameLoop	; This label is used as the main game loop, so return here as long as there are still bricks in the game!
-	; Put some delay to slow down the ball
-	LD R6, DELAY	
-	JSR DELAY_LOOP
+    ;; TODO implement current location and direction
+    ;; TODO implement next location
 
-  HALT
+    TRAP x41 ; Get color of next location -> R5
+    HALT
+    ;; TODO BR??? WALL_COLLISION_LABEL if wall color, its a wall
+    ;; TODO BR??? BRICK_COLLISION_LABEL if brick color, its a brick
+    ;; TODO change color values to BRICKCOLOR and WALLCOLOR
+    ;; TODO BR??? GAME_OVER_LABEL Check if at bottom of the screen, game over 
+    ;; TODO No collision
+      ; move ball by erasing current ball then redrawing ball at new location
+      ; store new location
+    ;; TODO check to see if total number of bricks is positive GAME_LOOP, otherwise HALT
 
-  BRnzp GameLoop
-GameLoop_END
+    BRnzp GameLoop
 
-DELAY_LOOP
+DelayLoopSR
+  DelayLoop:
 	ADD R6,R6,#-1
-	BRp DELAY_LOOP
+	BRp DelayLoop
 	RET
 
 ;;
