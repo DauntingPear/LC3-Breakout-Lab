@@ -12,6 +12,7 @@ START: ;; CLEAR THE SCREEN
   JSR InitFrameBufferSR
 
   LD R5,VIDEO
+  LD R1,RMAX
   LD R2,RED
   JSR DrawTopSR
   JSR DrawSideSR
@@ -39,26 +40,18 @@ InitFrameBufferSR
 ;; Draw box row
 ;;
 DrawTopSR
-  LD R5,VIDEO ; Pointer to where pixels will be written
-  ST R7,TEMP ; Store program execution spot
-  LD R4,FOUR ; Iterator 1
-
-  DrawTopHeight:
-    LD R3,BOX_ROW_WIDTH ; Iterator 2
-
-    DrawTopRow:
-      STR R2,R5,#0 ; Set pixel color
-      ADD R5,R5,#1 ; Increment pixel
-      ADD R3,R3,#-1 ; Decrement iterator
-      BRp DrawTopRow
-
-    LD R3,NEXTROW ; Load nextrow offset value
-    ADD R5,R5,R3 ; Increment pixel value by offset
-
-    ADD R4,R4,#-1 ; Decrement iterator
-    BRzp DrawTopHeight
-  LD R7,TEMP ; Load return value
-  RET
+	LD R4,TOPWIDTH	; We need 4 such rows of length 84 decimal each
+	AND R0,R0, #0
+	LD R1, ZERO
+	
+	ST R7, TEMP
+TOP_LOOP:
+	TRAP x40
+	ADD R0, R0, #1
+	ADD R4, R4, #-1
+	BRp TOP_LOOP;	
+	LD R7, TEMP
+	RET
 
 ;;
 ;; Draw Sides
@@ -197,9 +190,11 @@ DELAY_LOOP
 ;; <======== Hardcoded values ========>
 ;;
 VIDEO .FILL xC000
-DISPSIZE .FILL x2E00
+DISPSIZE .FILL x3E00
 DISPWIDTH .FILL x0080
 BOX_ROW_WIDTH .FILL 84
+
+TOPWIDTH .FILL 21
 
 ZERO .FILL x0000
 EIGHTY .FILL x0050
