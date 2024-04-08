@@ -19,7 +19,21 @@ START: ;; CLEAR THE SCREEN
   JSR DrawBottomSR
 
   LD R2,GREEN
-  JSR BrickSR
+  ; Set column 
+  AND R0,R0,#0
+  ADD R0,R0,#2
+
+  ; Set row
+  AND R1,R1,#0
+  ADD R1,R1,#2
+
+  ; Draw Bricks
+  JSR DrawBrickSR
+  ADD R0,R0,#1
+  JSR DrawBrickSR
+  ADD R0,R0,#1
+  JSR DrawBrickSR
+  
 HALT
 
 ;;
@@ -85,67 +99,37 @@ DrawSideSR
 ;; Draw Bottom
 ;;
 DrawBottomSR
-  LD R5,VIDEO
-  LD R3,BOTTOMSTART
-  ADD R5,R5,R3
+  LD R0,ZERO
+  LD R1,ZERO
+  LD R4,WIDTH
+  LD R3,SIDEHEIGHT
+  ADD R1,R1,R3
+  LD R3,ZERO
 
   ST R7,TEMP
-  LD R4,FOUR
-  DrawBottomHeight:
-    LD R3,BOX_ROW_WIDTH
-
-    DrawBottomRow:
-      STR R2,R5,#0
-      ADD R5,R5,#1
-      ADD R3,R3,#-1
-      BRp DrawBottomRow
-
-    LD R3,NEXTROW
-    ADD R5,R5,R3
-
+  DrawBottom:
+    TRAP x40
+    ADD R0,R0,#1
     ADD R4,R4,#-1
-    BRzp DrawBottomHeight
+    BRp DrawBottom
   LD R7,TEMP
   RET
 
 ;;
 ;; Draw Bricks
 ;;
-BrickSR
-  LD R5,VIDEO ; Load first pixel location
-  LD R3,BRICKOFFSET ; Load brick offset
-  ADD R5,R5,R3 ; Adds brick offset position
-
-  ST R7,TEMP ; Store program return
-
-  LD R7,BRICK_WIDTH ; Load width of brick
-
-  LD R4,FOUR ; Iterator 1 -> Controls for number of rows to draw
-  DrawBrickHeight:
-
-    AND R6,R6,0
-    ADD R6,R6,#2 ; Iterator 2 -> Controls for Number of bricks in a row
-    DrawBrick:
-
-      LD R3,BRICK_WIDTH ; Iterator 3 -> Controls for width of brick
-      ADD R5,R5,#4
-
-      DrawBrickRow:
-        STR R2,R5,#0
-        ADD R5,R5,#1
-        ADD R3,R3,#-1
-        BRp DrawBrickRow
-
-      ADD R6,R6,#-1
-      BRzp DrawBrick
-
-    LD R6,NEXTBRICKROW
-    ADD R5,R5,R6
-
+DrawBrickSR
+  LD R4,BRICKWIDTH
+  
+  ST R7,TEMP
+  DrawBrick:
+    TRAP x40
+    ADD R0,R0,#1
     ADD R4,R4,#-1
-    BRzp DrawBrickHeight
+    BRp DrawBrick
   LD R7,TEMP
   RET
+  
 
 
 ;;
@@ -181,14 +165,10 @@ DELAY_LOOP
 ;;
 VIDEO .FILL xC000
 DISPSIZE .FILL x3E00
-DISPWIDTH .FILL x0080
-BOX_ROW_WIDTH .FILL 84
 
 WIDTH .FILL 21
 
 ZERO .FILL x0000
-EIGHTY .FILL x0050
-TWENTY .FILL x0014
 SIDEHEIGHT .FILL 30
 
 RED .FILL x7C00
@@ -199,25 +179,8 @@ WHITE .FILL x7FFF
 FIVE .FILL x0004
 FOUR .FILL x0003
 THREE .FILL x0002
-EIGHT .FILL x0008
 
-TOPSTART .FILL xC000
-BOTTOMSTART .FILL x3C00
-NEXTROW .FILL x002C
-RMAX .FILL x0053
-NEXTC .FILL x007C
-NEXTSIDE .FILL x004C
-INCRSIDE .FILL x0028
-
-SIDESTART .FILL x0200
-SIDE .FILL xC200
-
-BRICKSTART .FILL x0408
-BRICKHEIGHT .FILL x0004
-BRICKSPACE .FILL x0004
-BRICK_WIDTH .FILL x0014
-BRICKNEXTROW .FILL x0035
-BRICK1 .FILL x0408
+BRICKWIDTH .FILL 5
 
 BALL_X	.FILL 5
 BALL_Y .FILL 5
@@ -228,9 +191,4 @@ BALL_COLOR .FILL x8AA8
 DELAY .FILL 6000
 TEMP .FILL 0
 
-NEXTBRICKROW .FILL x0038
-BRICKOFFSET .FILL x0404
-
-DB1 .STRINGZ "DB1"
-TOP .STRINGZ "TOP"
 .end
