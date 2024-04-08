@@ -19,7 +19,21 @@ START: ;; CLEAR THE SCREEN
   JSR DrawBottomSR
 
   LD R2,GREEN
-  JSR BrickSR
+  ; Set column 
+  AND R0,R0,#0
+  ADD R0,R0,#2
+
+  ; Set row
+  AND R1,R1,#0
+  ADD R1,R1,#2
+
+  ; Draw Bricks
+  JSR DrawBrickSR
+  ADD R0,R0,#1
+  JSR DrawBrickSR
+  ADD R0,R0,#1
+  JSR DrawBrickSR
+  
 HALT
 
 ;;
@@ -104,41 +118,18 @@ DrawBottomSR
 ;;
 ;; Draw Bricks
 ;;
-BrickSR
-  LD R5,VIDEO ; Load first pixel location
-  LD R3,BRICKOFFSET ; Load brick offset
-  ADD R5,R5,R3 ; Adds brick offset position
-
-  ST R7,TEMP ; Store program return
-
-  LD R7,BRICK_WIDTH ; Load width of brick
-
-  LD R4,FOUR ; Iterator 1 -> Controls for number of rows to draw
-  DrawBrickHeight:
-
-    AND R6,R6,0
-    ADD R6,R6,#2 ; Iterator 2 -> Controls for Number of bricks in a row
-    DrawBrick:
-
-      LD R3,BRICK_WIDTH ; Iterator 3 -> Controls for width of brick
-      ADD R5,R5,#4
-
-      DrawBrickRow:
-        STR R2,R5,#0
-        ADD R5,R5,#1
-        ADD R3,R3,#-1
-        BRp DrawBrickRow
-
-      ADD R6,R6,#-1
-      BRzp DrawBrick
-
-    LD R6,NEXTBRICKROW
-    ADD R5,R5,R6
-
+DrawBrickSR
+  LD R4,BRICKWIDTH
+  
+  ST R7,TEMP
+  DrawBrick:
+    TRAP x40
+    ADD R0,R0,#1
     ADD R4,R4,#-1
-    BRzp DrawBrickHeight
+    BRp DrawBrick
   LD R7,TEMP
   RET
+  
 
 
 ;;
