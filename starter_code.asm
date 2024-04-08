@@ -152,9 +152,21 @@ GameLoopSR
   GameLoop	; This label is used as the main game loop, so return here as long as there are still bricks in the game!
     ; Put some delay to slow down the ball
     LD R6, DELAY	
-    JSR DELAY_LOOP
+    JSR DelayLoopSR
 
+    ;; TODO implement current location and direction
+    ;; TODO implement next location
+
+    TRAP x41 ; Get color of next location -> R5
     HALT
+    ;; TODO BR??? WALL_COLLISION_LABEL if wall color, its a wall
+    ;; TODO BR??? BRICK_COLLISION_LABEL if brick color, its a brick
+    ;; TODO change color values to BRICKCOLOR and WALLCOLOR
+    ;; TODO BR??? GAME_OVER_LABEL Check if at bottom of the screen, game over 
+    ;; TODO No collision
+      ; move ball by erasing current ball then redrawing ball at new location
+      ; store new location
+    ;; TODO check to see if total number of bricks is positive GAME_LOOP, otherwise HALT
 
     BRnzp GameLoop
 
