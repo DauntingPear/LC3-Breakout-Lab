@@ -149,19 +149,19 @@ DrawBallSR
 
 
 GameLoopSR
-GameLoop	; This label is used as the main game loop, so return here as long as there are still bricks in the game!
-	; Put some delay to slow down the ball
-	LD R6, DELAY	
-	JSR DELAY_LOOP
+  GameLoop	; This label is used as the main game loop, so return here as long as there are still bricks in the game!
+    ; Put some delay to slow down the ball
+    LD R6, DELAY	
+    JSR DELAY_LOOP
 
-  HALT
+    HALT
 
-  BRnzp GameLoop
-GameLoop_END
+    BRnzp GameLoop
 
-DELAY_LOOP
+DelayLoopSR
+  DelayLoop:
 	ADD R6,R6,#-1
-	BRp DELAY_LOOP
+	BRp DelayLoop
 	RET
 
 ;;
