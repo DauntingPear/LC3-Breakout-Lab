@@ -12,7 +12,6 @@ START: ;; CLEAR THE SCREEN
   JSR InitFrameBufferSR
 
   LD R5,VIDEO
-  LD R1,RMAX
   LD R2,RED
   JSR DrawTopSR
   JSR DrawSideSR
