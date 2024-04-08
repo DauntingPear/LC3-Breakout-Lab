@@ -59,7 +59,7 @@ DrawTopSR
 ;; R1 -> Row
 ;; R2 -> Color
 ;; R3 -> Height Iteration Counter
-;; R5 -> Width Iteration counter
+;; R5 -> Side distance between offset
 ;; R6
 ;; R7
 ;----------------------------
