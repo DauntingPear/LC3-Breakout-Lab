@@ -70,7 +70,16 @@ DrawSideSR
   LD R5,WIDTH
   ADD R5,R5,#-1
   ST R7,TEMP
-  DRAW_LOOP
+  DrawSide:
+    AND R0,R0,#0 ; Set Column pointer
+    TRAP x40 ; Draw Left Side
+    ADD R0,R0,R5
+    TRAP x40 ; Draw Right Side
+    ADD R1,R1,#1 ; Increment Row
+    ADD R3,R3,#-1 ; Decrement iterator
+    BRp DrawSide
+  LD R7,TEMP
+  RET
 
 ;;
 ;; Draw Bottom
