@@ -13,6 +13,7 @@ START: ;; CLEAR THE SCREEN
 
   LD R5,VIDEO
   LD R2,RED
+  ST R2,WALL_COLOR
 
   ; Draw Sides
   JSR DrawTopSR
@@ -20,6 +21,7 @@ START: ;; CLEAR THE SCREEN
   JSR DrawBottomSR
 
   LD R2,GREEN
+  ST R2,BRICK_COLOR
   ; Set column 
   AND R0,R0,#0
   ADD R0,R0,#2
@@ -35,12 +37,36 @@ START: ;; CLEAR THE SCREEN
   ADD R0,R0,#1
   JSR DrawBrickSR
 
-  JSR DrawBallSR
+  LD R0,BALL_COLOR
+  ST R0,Color
+  LD R0,BALL_X
+  ST R0,X
+  LD R0,BALL_Y
+  ST R0,Y
+  JSR DrawPixelSR
 
-  ; Game Loop
-  
+  JSR GameLoopSR
+
 HALT
 
+;;+-----------------------------------------------------------------------------+
+;;|                                Subroutines                                  |
+;;+-----------------------------------------------------------------------------+
+
+RED .FILL x7C00
+BLACK .FILL x0000
+GREEN .FILL x03E0
+WHITE .FILL x7FFF
+BLUE .FILL x001F
+
+VIDEO .FILL xC000
+DISPSIZE .FILL x3E00
+BRICK_COLOR .FILL 0
+WALL_COLOR .FILL 0
+
+BRICKS_REMAINING .FILL 15
+
+;----------------------------
 ;; === Initialize frame buffer ===
 ;; R0
 ;; R1
@@ -62,9 +88,11 @@ InitFrameBufferSR
     BRp DrawBuffer
   RET
 
+;----------------------------
 ;;
 ;; Draw box row
 ;;
+;----------------------------
 DrawTopSR
 	LD R4,WIDTH	; We need 4 such rows of length 84 decimal each
 	AND R0,R0, #0
@@ -79,6 +107,7 @@ DrawTopSR
     LD R7, TEMP
     RET
 
+;----------------------------
 ;;
 ;; === Draw Sides ===
 ;; R0 -> Column
@@ -107,9 +136,11 @@ DrawSideSR
   LD R7,TEMP
   RET
 
+;----------------------------
 ;;
 ;; Draw Bottom
 ;;
+;----------------------------
 DrawBottomSR
   LD R0,ZERO
   LD R1,ZERO
@@ -127,9 +158,11 @@ DrawBottomSR
   LD R7,TEMP
   RET
 
+;----------------------------
 ;;
 ;; Draw Bricks
 ;;
+;----------------------------
 DrawBrickSR
   LD R4,BRICKWIDTH
   
@@ -142,81 +175,318 @@ DrawBrickSR
   LD R7,TEMP
   RET
   
+;----------------------------
 ;;
-;; Draw Ball
+;; Draw Pixel
 ;;
-DrawBallSR
-  LD R0, BALL_X		; X coordinate of ball starts at location 5	
-  LD R1, BALL_Y		; Y coordinate of ball starts at location 5
-  LD R2, BALL_COLOR	
+;----------------------------
+PIXEL_R0 .FILL 0
+PIXEL_R1 .FILL 0
+PIXEL_R2 .FILL 0
+DrawPixelSR
+  ST R0,PIXEL_R0
+  ST R1,PIXEL_R1
+  ST R2,PIXEL_R2
+  LD R0, X		; X coordinate of ball starts at location 5	
+  LD R1, Y		; Y coordinate of ball starts at location 5
+  LD R2, Color
   ST R7,TEMP
   TRAP x40			; Trap to OS to draw the ball
+  LD R0,PIXEL_R0
+  LD R1,PIXEL_R1
+  LD R2,PIXEL_R2
   LD R7,TEMP
   RET
 
+;----------------------------
 ;;
 ;; Game Loop
 ;;
+;----------------------------
+GAME_LOOP_RET .FILL 0
+
 GameLoopSR
+  ST R7,GAME_LOOP_RET
   GameLoop	; This label is used as the main game loop, so return here as long as there are still bricks in the game!
     ; Put some delay to slow down the ball
-    LD R6, DELAY	
+
     JSR DelayLoopSR
+    
+    LD R0,BALL_X
+    LD R1,BALL_Y
+    LD R2,BALL_X_DIR
+    LD R3,BALL_Y_DIR
 
-    ;; TODO implement current location and direction
-    ;; TODO implement next location
+    ; Calculates next position, then runs SRs for collisions
+    JSR BallTickSR
 
-    TRAP x41 ; Get color of next location -> R5
-    HALT
-    ;; TODO BR??? WALL_COLLISION_LABEL if wall color, its a wall
-    ;; TODO BR??? BRICK_COLLISION_LABEL if brick color, its a brick
-    ;; TODO change color values to BRICKCOLOR and WALLCOLOR
-    ;; TODO BR??? GAME_OVER_LABEL Check if at bottom of the screen, game over 
-    ;; TODO No collision
-      ; move ball by erasing current ball then redrawing ball at new location
-      ; store new location
-    ;; TODO check to see if total number of bricks is positive GAME_LOOP, otherwise HALT
+    LD R0,BRICKS_REMAINING
+    ADD R0,R0,#-1
+    ST R0,BRICKS_REMAINING
 
-    BRnzp GameLoop
+    BRp GameLoop
+  LD R7,GAME_LOOP_RET
+  RET
 
+
+;----------------------------
 ;;
 ;; Delay Loop
 ;;
+;----------------------------
+DELAY .FILL 8000
+DELAY_LOOP_RET .FILL 0
+
 DelayLoopSR
+  ST R7,DELAY_LOOP_RET
+
+  LD R6,DELAY
+  
   DelayLoop:
-	ADD R6,R6,#-1
-	BRp DelayLoop
+    ADD R6,R6,#-1
+    BRp DelayLoop
+
+  LD R7,DELAY_LOOP_RET
 	RET
 
+;----------------------------
+;;
+;; === Ball Tick ===
+;;
+;; R0 -> BALL_X
+;; R1 -> BALL_Y
+;; R2 -> BALL_X_DIR
+;; R3 -> BALL_Y_DIR
+;; VAR: BALL_COLOR
+;; VAR: WALL_COLOR
+;; VAR: BRICK_COLOR
+;----------------------------
+BALLTICK_RET .FILL 0
+BALLTICK_R3 .FILL 0
+
+BallTickSR
+  
+  ST R7,BALLTICK_RET
+  JSR NextPositionSR
+  
+  ;; IN R0 -> x column, R1 -> y row
+  ;; OUT R5 -> NextColor
+  TRAP x41
+  ST R3,BALLTICK_R3
+  AND R3,R3,#0
+  ADD R3,R3,R5
+
+  JSR BallCollisionSR
+  
+  LD R6,BLACK
+  ST R6,COLOR
+  JSR DrawPixelSR
+
+  ST R0,BALL_X
+  ST R0,X
+  ST R1,BALL_Y
+  ST R1,Y
+  ST R2,BALL_X_DIR
+  LD R3,BALLTICK_R3
+  ST R3,BALL_Y_DIR
+  LD R6,BALL_COLOR
+  ST R6,COLOR
+  
+  JSR DrawPixelSR
+
+  LD R7,BALLTICK_RET
+  RET
+  
+;----------------------------
+;;
+;; === Calculate Next Location ===
+;;
+;; R0 -> BALL_X
+;; R1 -> BALL_Y
+;; R2 -> BALL_X_DIR
+;; R3 -> BALL_Y_DIR
+;; VAR: BALL_COLOR
+;----------------------------
+NPX .FILL 0
+NPY .FILL 0
+
+NEXTPOS_RET .FILL 0
+
+NextPositionSR
+  ST R7,NEXTPOS_RET
+
+  ADD R0,R0,R2 ;; Incr/Decr X position -- depends on direction of ball (+1/-1)
+  ADD R1,R1,R3 ;; Incr/Decr Y position -- depends on direction of ball (+1/-1)
+  ST R0,NPX
+  ST R1,NPY
+  LD R7,NEXTPOS_RET
+  RET
+
+;----------------------------
+;;
+;; === Ball Collision SR ===
+;; 
+;; R0 -> BALL_X
+;; R1 -> BALL_Y
+;; R2 -> BALL_X_DIR
+;; R3 -> BALL_Y_DIR
+;; R4 -> Color Check
+;; R5 -> NEXTCOLOR
+;; R6 -> 
+
+;; RED -> x7C00
+;; BLACK -> x0000
+;; GREEN -> x03E0
+;; WHITE -> x7FFF
+;; BLUE -> x001F
+;;
+;----------------------------
+COLLISION_RET .FILL 0
+
+BallCollisionSR
+  ST R7,COLLISION_RET
+
+  ;; Check for wall
+  ;; Negate R4 (wall color) for subtraction
+  LD R4,WALL_COLOR
+  NOT R4,R4
+  ADD R4,R4,#1
+
+  ADD R4,R4,R5
+  BRz WallCollision
+
+  ;; Check for brick
+  ;; Negate R4 (brick color) for subtraction
+  LD R4,BRICK_COLOR
+  NOT R4,R4
+  ADD R4,R4,#1
+
+  ADD R4,R4,R5
+  BRz BrickCollision
+  
+  ;TODO Check if bottom of screen
+  ;; Check for bottom
+  ;; Negate R4 (height of play area)
+  ;; Checking to see if next location >= bottom row (30) (rows start at 0, really 31 rows)
+  LD R4,SIDEHEIGHT
+  NOT R4,R4
+  ADD R4,R4,#1
+
+  ADD R4,R4,R1 ; R1 is the ball height
+  BRp BottomCollision
+
+  Collision ; Label to jump to for wall and brick collision. Allows for value updates.
+
+  ST R0,BALL_X
+  ST R1,BALL_Y
+  ST R2,BALL_X_DIR
+  ST R3,BALL_Y_DIR
+
+  LD R7,COLLISION_RET
+  RET
+
+
+
+  
+  
+  
+
+;----------------------------
+;;
+;; === Wall Collision ===
+;;
+;----------------------------
+WALL_COL_RET .FILL 0
+
+WallCollision
+  JSR WallCollisionSR
+  BR Collision
+
+;TODO
+WallCollisionSR
+  ST R7,WALL_COL_RET
+  HALT
+  LD R7,WALL_COL_RET
+  RET
+
+
+;----------------------------
+;;
+;; === Brick Collision ===
+;;
+;----------------------------
+BRICK_COL_RET .FILL 0
+
+BrickCollision
+  JSR BrickCollisionSR
+  BR Collision
+
+;TODO
+BrickCollisionSR
+  ST R7,BRICK_COL_RET
+  HALT
+  LD R7,BRICK_COL_RET
+  RET
+
+;----------------------------
+;;
+;; === Check for bottom of screen ===
+;;
+;----------------------------
+BOTTOM_COL_RET .FILL 0
+BottomCollision
+  JSR BottomCollisionSR
+  BR GAME_OVER
+
+BottomCollisionSR
+  ST R7,BOTTOM_COL_RET
+  HALT
+  LD R7,BOTTOM_COL_RET
+  RET
+
+;----------------------------
+;;
+;; === Ball Direction ===
+;;
+;----------------------------
+BALLDIR_RET .FILL 0
+
+BallDirSR
+
+
+;----------------------------
+;;
+;; === Game Over ===
+;;
+;----------------------------
+GAME_OVER
+HALT
+
+
+;----------------------------
 ;;
 ;; <======== Hardcoded values ========>
 ;;
-VIDEO .FILL xC000
-DISPSIZE .FILL x3E00
+;----------------------------
+COLOR .FILL 0
+X .FILL 0
+Y .FILL 0
+
 
 WIDTH .FILL 21
 
 ZERO .FILL x0000
 SIDEHEIGHT .FILL 30
 
-RED .FILL x7C00
-BLACK .FILL x0000
-GREEN .FILL x03E0
-WHITE .FILL x7FFF
-
-FIVE .FILL x0004
-FOUR .FILL x0003
-THREE .FILL x0002
 
 BRICKWIDTH .FILL 5
 
 BALL_X	.FILL 5
 BALL_Y .FILL 5
 BALL_X_DIR .FILL 1
-BALL_Y_DIR .FILL 1
+BALL_Y_DIR .FILL #-1
 BALL_COLOR .FILL x8AA8
 
-DELAY .FILL 6000
 TEMP .FILL 0
 
 .end
