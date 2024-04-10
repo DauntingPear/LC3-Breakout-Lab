@@ -95,9 +95,11 @@ InitFrameBufferSR
 ;; TODO
 
 ;----------------------------
-;;
-;; Draw box row
-;;
+;; Draws the top part of the boundary
+;; Inputs:
+;;  R2 -> Boundary Color
+;;  R5 -> Frame Buffer start
+;; Modifies: R0, R1, R4, ST[R7]
 ;----------------------------
 DrawTopSR
 	LD R4,WIDTH	; We need 4 such rows of length 84 decimal each
