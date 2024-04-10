@@ -85,6 +85,15 @@ InitFrameBufferSR
     BRp DrawBuffer
   RET
 
+;-- Draw Game Boundary Walls --;
+
+;----------------------------
+;; Draws game boundary
+;; Inputs: None
+;; Modifies: ??
+;----------------------------
+;; TODO
+
 ;----------------------------
 ;;
 ;; Draw box row
