@@ -156,10 +156,12 @@ DrawBottomSR
   LD R7,TEMP
   RET
 
+;-- Draw Bricks --;
+
 ;----------------------------
-;;
-;; Draw Bricks
-;;
+;; Draws Bricks
+;; Inputs: R0 -> Column position of brick, R1 -> Row position of brick
+;; Modifies: R0, R4
 ;----------------------------
 DrawBrickSR
   LD R4,BRICKWIDTH
