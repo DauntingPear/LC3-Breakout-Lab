@@ -142,9 +142,9 @@ DrawSideSR
   RET
 
 ;----------------------------
-;;
-;; Draw Bottom
-;;
+;; Draws bottom side of boundary
+;; Inputs: None
+;; Modifies: R0, R1, R3, R4
 ;----------------------------
 DrawBottomSR
   LD R0,ZERO
