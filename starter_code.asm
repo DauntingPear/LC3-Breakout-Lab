@@ -175,6 +175,8 @@ DrawBrickSR
   LD R7,TEMP
   RET
 
+;-- Draw Utility --;
+
 ;----------------------------
 ;;
 ;; Draw Pixel
