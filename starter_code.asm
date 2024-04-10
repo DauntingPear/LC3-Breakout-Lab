@@ -88,13 +88,6 @@ InitFrameBufferSR
 ;-- Draw Game Boundary Walls --;
 
 ;----------------------------
-;; Draws game boundary
-;; Inputs: None
-;; Modifies: ??
-;----------------------------
-;; TODO
-
-;----------------------------
 ;; Draws the top part of the boundary
 ;; Inputs:
 ;;  R2 -> Boundary Color
