@@ -116,15 +116,11 @@ DrawTopSR
     RET
 
 ;----------------------------
-;;
-;; === Draw Sides ===
-;; R0 -> Column
-;; R1 -> Row
-;; R2 -> Color
-;; R3 -> Height Iteration Counter
-;; R5 -> Side distance between offset
-;; R6
-;; R7
+;; Draws sides of boundary
+;; Inputs:
+;;  R2 -> Boundary Color
+;;  R5 -> Frame Buffer start
+;;  Modifies: R0, R1, R3
 ;----------------------------
 DrawSideSR
   AND R1,R1,#0
