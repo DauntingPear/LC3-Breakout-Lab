@@ -1,10 +1,10 @@
-;;
-;; Author: Adrian Brady
-;; Date: 04/01/2024
-;; Purpose: Breakout Game Lab for Computer Engineering class spring 2024 MATC.
-;;
-
-;; -----------------------------------------------------------------------------
+;;+------------------------------------------------------------------------------+
+;;|                                                                              |
+;;|  Author: Adrian Brady                                                        |
+;;|  Date: 04/01/2024                                                            |
+;;|  Purpose: Breakout Game Lab for Computer Engineering class spring 2024 MATC. |
+;;|                                                                              |
+;;+------------------------------------------------------------------------------+
 
 .orig x3000
 
