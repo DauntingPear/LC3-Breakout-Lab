@@ -8,7 +8,7 @@
 
 .orig x3000
 
-START: ;; CLEAR THE SCREEN
+START:
   JSR InitFrameBufferSR
 
   LD R5,VIDEO
