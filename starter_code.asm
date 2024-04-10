@@ -120,14 +120,15 @@ DrawTopSR
 ;; Inputs:
 ;;  R2 -> Boundary Color
 ;;  R5 -> Frame Buffer start
-;;  Modifies: R0, R1, R3
+;; Modifies: R0, R1, R3
 ;----------------------------
 DrawSideSR
+  ; Set draw column
   AND R1,R1,#0
   ADD R1,R1,#1
-  LD R3,SIDEHEIGHT
-  LD R5,WIDTH
-  ADD R5,R5,#-1
+  LD R3,SIDEHEIGHT ; Set number of rows to draw (iterator)
+  LD R5,WIDTH ; Set position of right side
+  ADD R5,R5,#-1 ; off by 1
   ST R7,TEMP
   DrawSide:
     AND R0,R0,#0 ; Set Column pointer
