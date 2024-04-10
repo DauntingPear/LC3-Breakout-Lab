@@ -64,7 +64,7 @@ DISPSIZE .FILL x3E00
 BRICK_COLOR .FILL 0
 WALL_COLOR .FILL 0
 
-BRICKS_REMAINING .FILL 15
+BRICKS_REMAINING .FILL 10
 
 ;----------------------------
 ;; === Initialize frame buffer ===
@@ -272,6 +272,8 @@ BallTickSR
   ;; IN R0 -> x column, R1 -> y row
   ;; OUT R5 -> NextColor
   TRAP x41
+  LD R0,BALL_X
+  LD R1,BALL_Y
   ST R3,BALLTICK_R3
   AND R3,R3,#0
   ADD R3,R3,R5
@@ -309,11 +311,28 @@ BallTickSR
 ;----------------------------
 NPX .FILL 0
 NPY .FILL 0
+NP0 .FILL 0
+NP1 .FILL 0
+NP2 .FILL 0
+NP3 .FILL 0
+NP4 .FILL 0
+NP5 .FILL 0
+NP6 .FILL 0
+NP7 .FILL 0
 
 NEXTPOS_RET .FILL 0
 
 NextPositionSR
   ST R7,NEXTPOS_RET
+
+  ST R0,NP0
+  ST R1,NP1
+  ST R2,NP2
+  ST R3,NP3
+  ST R4,NP4
+  ST R5,NP5
+  ST R6,NP6
+  ST R7,NP7
 
   ADD R0,R0,R2 ;; Incr/Decr X position -- depends on direction of ball (+1/-1)
   ADD R1,R1,R3 ;; Incr/Decr Y position -- depends on direction of ball (+1/-1)
@@ -342,6 +361,10 @@ NextPositionSR
 ;;
 ;----------------------------
 COLLISION_RET .FILL 0
+TEMP_R0 .FILL 0
+TEMP_R1 .FILL 0
+TEMP_R2 .FILL 0
+TEMP_R3 .FILL 0
 
 BallCollisionSR
   ST R7,COLLISION_RET
@@ -353,6 +376,7 @@ BallCollisionSR
   ADD R4,R4,#1
 
   ADD R4,R4,R5
+  ST R0,TEMP_R0
   BRz WallCollision
 
   ;; Check for brick
@@ -376,6 +400,10 @@ BallCollisionSR
   BRp BottomCollision
 
   Collision ; Label to jump to for wall and brick collision. Allows for value updates.
+  
+  LD R0,NPX
+  LD R1,NPY
+
 
   ST R0,BALL_X
   ST R1,BALL_Y
@@ -402,12 +430,55 @@ WallCollision
   JSR WallCollisionSR
   BR Collision
 
-;TODO
 WallCollisionSR
   ST R7,WALL_COL_RET
-  HALT
+  
+  ST R1,TEMP_R1
+  ;; Right Wall -> Checks if ball column is column 19
+  LD R1,WIDTH
+  ADD R1,R1,#-1 ; Set to max position of ball (21-2=19)
+  NOT R1,R1
+  ADD R1,R1,#1
+  ADD R1,R1,R0
+  BRz FLIP_VERTICAL
+
+  ;; Left wall -> checks if ball column is column 1
+  AND R1,R1,#0
+  ADD R1,R1,#-1
+  ADD R1,R1,R0
+  BRz FLIP_VERTICAL
+
+  ;; Otherwise, horizontal wall was hit -> Flip y direction
+  ;; Negation
+  LD R1,BALL_Y_DIR
+  NOT R1,R1
+  ADD R1,R1,#1
+  ST R1,BALL_Y_DIR
+  
+  CollisionReturn
+
+  LD R1,TEMP_R1
+  LD R3,BALL_Y_DIR
+  LD R2,BALL_X_DIR
+  JSR NextPositionSR
+  ST R0,TEMP_R0
   LD R7,WALL_COL_RET
   RET
+
+FLIP_VERTICAL
+  ;;TODO check for top corner
+
+  ;; TODO check for bottom corner
+
+  ;; Otherwise, flip x direction
+  LD R1,BALL_X_DIR
+  NOT R1,R1
+  ST R1,BALL_X_DIR
+  ADD R1,R1,#1
+  ST R1,BALL_X_DIR
+  BR CollisionReturn
+
+FLIP_CORNER
 
 
 ;----------------------------
@@ -483,8 +554,8 @@ BRICKWIDTH .FILL 5
 
 BALL_X	.FILL 5
 BALL_Y .FILL 5
-BALL_X_DIR .FILL 1
-BALL_Y_DIR .FILL #-1
+BALL_X_DIR .FILL #-1
+BALL_Y_DIR .FILL 1
 BALL_COLOR .FILL x8AA8
 
 TEMP .FILL 0
