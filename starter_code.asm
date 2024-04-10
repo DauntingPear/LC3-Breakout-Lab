@@ -94,13 +94,13 @@ DrawTopSR
 	LD R4,WIDTH	; We need 4 such rows of length 84 decimal each
 	AND R0,R0, #0
 	LD R1, ZERO
-	
+
 	ST R7, TEMP
   DrawTop:
     TRAP x40
     ADD R0, R0, #1
     ADD R4, R4, #-1
-    BRp DrawTop;	
+    BRp DrawTop;
     LD R7, TEMP
     RET
 
@@ -162,7 +162,7 @@ DrawBottomSR
 ;----------------------------
 DrawBrickSR
   LD R4,BRICKWIDTH
-  
+
   ST R7,TEMP
   DrawBrick:
     TRAP x40
@@ -171,7 +171,7 @@ DrawBrickSR
     BRp DrawBrick
   LD R7,TEMP
   RET
-  
+
 ;----------------------------
 ;;
 ;; Draw Pixel
@@ -184,7 +184,7 @@ DrawPixelSR
   ST R0,PIXEL_R0
   ST R1,PIXEL_R1
   ST R2,PIXEL_R2
-  LD R0, X		; X coordinate of ball starts at location 5	
+  LD R0, X		; X coordinate of ball starts at location 5
   LD R1, Y		; Y coordinate of ball starts at location 5
   LD R2, Color
   ST R7,TEMP
@@ -208,7 +208,7 @@ GameLoopSR
     ; Put some delay to slow down the ball
 
     JSR DelayLoopSR
-    
+
     LD R0,BALL_X
     LD R1,BALL_Y
     LD R2,BALL_X_DIR
@@ -238,7 +238,7 @@ DelayLoopSR
   ST R7,DELAY_LOOP_RET
 
   LD R6,DELAY
-  
+
   DelayLoop:
     ADD R6,R6,#-1
     BRp DelayLoop
@@ -247,25 +247,20 @@ DelayLoopSR
 	RET
 
 ;----------------------------
-;;
-;; === Ball Tick ===
-;;
-;; R0 -> BALL_X
-;; R1 -> BALL_Y
-;; R2 -> BALL_X_DIR
-;; R3 -> BALL_Y_DIR
-;; VAR: BALL_COLOR
-;; VAR: WALL_COLOR
-;; VAR: BRICK_COLOR
+;; Performs a "Tick" for the game
+;; Inputs:
+;;   - R0 -> Ball X position
+;;   - R1 -> Ball Y position
+;;   -
 ;----------------------------
 BALLTICK_RET .FILL 0
 BALLTICK_R3 .FILL 0
 
 BallTickSR
-  
+
   ST R7,BALLTICK_RET
   JSR NextPositionSR
-  
+
   ;; IN R0 -> x column, R1 -> y row
   ;; OUT R5 -> NextColor
   TRAP x41
@@ -276,7 +271,7 @@ BallTickSR
   ADD R3,R3,R5
 
   JSR BallCollisionSR
-  
+
   LD R6,BLACK
   ST R6,COLOR
   JSR DrawPixelSR
@@ -290,12 +285,12 @@ BallTickSR
   ST R3,BALL_Y_DIR
   LD R6,BALL_COLOR
   ST R6,COLOR
-  
+
   JSR DrawPixelSR
 
   LD R7,BALLTICK_RET
   RET
-  
+
 ;----------------------------
 ;;
 ;; === Calculate Next Location ===
@@ -341,14 +336,14 @@ NextPositionSR
 ;----------------------------
 ;;
 ;; === Ball Collision SR ===
-;; 
+;;
 ;; R0 -> BALL_X
 ;; R1 -> BALL_Y
 ;; R2 -> BALL_X_DIR
 ;; R3 -> BALL_Y_DIR
 ;; R4 -> Color Check
 ;; R5 -> NEXTCOLOR
-;; R6 -> 
+;; R6 ->
 
 ;; RED -> x7C00
 ;; BLACK -> x0000
@@ -384,7 +379,7 @@ BallCollisionSR
 
   ADD R4,R4,R5
   BRz BrickCollision
-  
+
   ;TODO Check if bottom of screen
   ;; Check for bottom
   ;; Negate R4 (height of play area)
@@ -397,7 +392,7 @@ BallCollisionSR
   BRp BottomCollision
 
   Collision ; Label to jump to for wall and brick collision. Allows for value updates.
-  
+
   LD R0,NPX
   LD R1,NPY
 
@@ -412,9 +407,9 @@ BallCollisionSR
 
 
 
-  
-  
-  
+
+
+
 
 ;----------------------------
 ;;
@@ -429,7 +424,7 @@ WallCollision
 
 WallCollisionSR
   ST R7,WALL_COL_RET
-  
+
   ST R1,TEMP_R1
   ;; Right Wall -> Checks if ball column is column 19
   LD R1,WIDTH
@@ -451,7 +446,7 @@ WallCollisionSR
   NOT R1,R1
   ADD R1,R1,#1
   ST R1,BALL_Y_DIR
-  
+
   CollisionReturn
 
   LD R1,TEMP_R1
