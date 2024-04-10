@@ -178,22 +178,28 @@ DrawBrickSR
 ;-- Draw Utility --;
 
 ;----------------------------
-;;
-;; Draw Pixel
-;;
+;; Draws a 4x4 pixel
+;; Inputs: Var(X), Var(Y), Var(Color)
+;; Modifies: ST[R0], ST[R1], ST[R2]
 ;----------------------------
 PIXEL_R0 .FILL 0
 PIXEL_R1 .FILL 0
 PIXEL_R2 .FILL 0
 DrawPixelSR
+  ; Store previous values to be restored later
   ST R0,PIXEL_R0
   ST R1,PIXEL_R1
   ST R2,PIXEL_R2
+  ST R7,TEMP ; Store to return later
+
+  ; Load values
   LD R0, X		; X coordinate of ball starts at location 5
   LD R1, Y		; Y coordinate of ball starts at location 5
   LD R2, Color
-  ST R7,TEMP
+
   TRAP x40			; Trap to OS to draw the ball
+
+  ; Reload values
   LD R0,PIXEL_R0
   LD R1,PIXEL_R1
   LD R2,PIXEL_R2
