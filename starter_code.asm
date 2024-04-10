@@ -22,7 +22,7 @@ START:
 
   LD R2,GREEN
   ST R2,BRICK_COLOR
-  ; Set column 
+  ; Set column
   AND R0,R0,#0
   ADD R0,R0,#2
 
@@ -67,16 +67,12 @@ WALL_COLOR .FILL 0
 
 BRICKS_REMAINING .FILL 10
 
+;-- Initialize Frame Buffer --;
+
 ;----------------------------
-;; === Initialize frame buffer ===
-;; R0
-;; R1
-;; R2 -> Color
-;; R3 -> Iterator value (total pixel count)
-;; R4
-;; R5 -> Pixel location
-;; R6
-;; R7 -> Return address
+;; Clears the Frame Buffer
+;; Inputs: None
+;; Modifies: R2, R3, R5 (no storage)
 ;----------------------------
 InitFrameBufferSR
   LD R5,VIDEO ; R5 <- pointer to where pixels will be written
