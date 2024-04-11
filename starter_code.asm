@@ -9,8 +9,10 @@
 .orig x3000
 
 START:
+  ; Initial Game Setup and Frame Buffer Initialization
   JSR InitFrameBufferSR
 
+  ; Initial boundary and Gameplay Objects Drawing
   LD R5,VIDEO
   LD R2,RED
   ST R2,WALL_COLOR
@@ -156,7 +158,7 @@ DrawBottomSR
   LD R7,TEMP
   RET
 
-;-- Draw Bricks --;
+;-- Initialize Gameplay Elements --;
 
 ;----------------------------
 ;; Draws Bricks
@@ -174,8 +176,6 @@ DrawBrickSR
     BRp DrawBrick
   LD R7,TEMP
   RET
-
-;-- Draw Utility --;
 
 ;----------------------------
 ;; Draws a 4x4 pixel
@@ -206,10 +206,12 @@ DrawPixelSR
   LD R7,TEMP
   RET
 
+;-- Main Gameplay Loop --;
+
 ;----------------------------
-;;
-;; Game Loop
-;;
+;; Runs the game loop
+;; Inputs:
+;; Modifies:
 ;----------------------------
 GAME_LOOP_RET .FILL 0
 
@@ -236,6 +238,7 @@ GameLoopSR
   LD R7,GAME_LOOP_RET
   RET
 
+;-- Utility Functions --;
 
 ;----------------------------
 ;;
@@ -256,6 +259,8 @@ DelayLoopSR
 
   LD R7,DELAY_LOOP_RET
 	RET
+
+;-- Ball Physics and Collision Detection --;
 
 ;----------------------------
 ;; Performs a "Tick" for the game
@@ -345,23 +350,15 @@ NextPositionSR
   RET
 
 ;----------------------------
-;;
-;; === Ball Collision SR ===
-;;
-;; R0 -> BALL_X
-;; R1 -> BALL_Y
-;; R2 -> BALL_X_DIR
-;; R3 -> BALL_Y_DIR
-;; R4 -> Color Check
-;; R5 -> NEXTCOLOR
-;; R6 ->
-
-;; RED -> x7C00
-;; BLACK -> x0000
-;; GREEN -> x03E0
-;; WHITE -> x7FFF
-;; BLUE -> x001F
-;;
+;; Ball Collision Logic
+;; Inputs:
+;;  VAR(BALL_X,R0)
+;;  VAR(BALL_Y,R1)
+;;  VAR(BALL_X_DIR,R2)
+;;  VAR(BALL_Y_DIR,R3)
+;;  VAR(WALL_COLOR,R4)
+;;  R5 -> Next pixel color
+;; Modifies: R4
 ;----------------------------
 COLLISION_RET .FILL 0
 TEMP_R0 .FILL 0
@@ -416,16 +413,10 @@ BallCollisionSR
   LD R7,COLLISION_RET
   RET
 
-
-
-
-
-
-
 ;----------------------------
-;;
-;; === Wall Collision ===
-;;
+;; Logic for ball colliding with a wall
+;; Inputs:
+;; Modifies:
 ;----------------------------
 WALL_COL_RET .FILL 0
 
@@ -485,9 +476,9 @@ FLIP_CORNER
 
 
 ;----------------------------
-;;
-;; === Brick Collision ===
-;;
+;; Logic for ball colliding with a brick
+;; Inputs:
+;; Modifies:
 ;----------------------------
 BRICK_COL_RET .FILL 0
 
@@ -503,9 +494,9 @@ BrickCollisionSR
   RET
 
 ;----------------------------
-;;
-;; === Check for bottom of screen ===
-;;
+;; Logic for ball colliding with the bottom of the border, out of bounds
+;; Inputs:
+;; Modifies:
 ;----------------------------
 BOTTOM_COL_RET .FILL 0
 BottomCollision
@@ -527,21 +518,18 @@ BALLDIR_RET .FILL 0
 
 BallDirSR
 
+;-- Game Over Logic --;
 
 ;----------------------------
+;; Game Over Logic
 ;;
-;; === Game Over ===
 ;;
 ;----------------------------
 GAME_OVER
 HALT
 
 
-;----------------------------
-;;
-;; <======== Hardcoded values ========>
-;;
-;----------------------------
+;-- Hardcoded Values --;
 COLOR .FILL 0
 X .FILL 0
 Y .FILL 0
