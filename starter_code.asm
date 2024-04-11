@@ -19,7 +19,7 @@ START:
   ; Initial boundary and Gameplay Objects Drawing
   ; Preconditions: None
   ; Postconditions: Draws game boundaries, initializes game environment,
-  ; draws ball. Register returns not considered
+  ; draws ball. Register returns not considered. R7 is return address.
   JSR InitializeGameSR
 
   ; Main Game loop
@@ -118,7 +118,7 @@ InitializeGameSR
   DrawBricksLoop:
     ; Draws bricks
     ; Preconditions: R0 starting column, R1 starting row, R2 color
-    ; Postconditions
+    ; Postconditions: Bricks are drawn, R4, R2, R1 and R0 used. R7 is return address.
     JSR DrawBrickSR
     ADD R0,R0,#1 ; Jump over space between bricks
     ADD R3,R3,#-1 ; Decrement iterator
@@ -134,9 +134,9 @@ InitializeGameSR
   LD R0,BALL_Y
   ST R0,Y
 
-  ; Draws the ball
-  ; Preconditions:
-  ; Postconditions:
+  ; Draws the ball, is a TRAP x40 wrapper
+  ; Preconditions: None
+  ; Postconditions: R7 return address
   JSR DrawPixelSR
 
   LD R7, GAMEINIT_RET ; Restore return value
@@ -227,8 +227,9 @@ DrawBottomSR
 
 ;----------------------------
 ;; Draws Bricks
-;; Inputs: R0 -> Column position of brick, R1 -> Row position of brick
-;; Modifies: R0, R4
+;; Modifies: R4, R0, R7
+;; Uses: R4 as brick width iterator, R0 as column, R2 as color, R1 as row
+;; Preserves: R1-R3, R5, R6, R7 (return address)
 ;----------------------------
 DrawBrickSR
   LD R4,BRICKWIDTH
@@ -247,8 +248,9 @@ DrawBrickSR
 
 ;----------------------------
 ;; Draws a 4x4 pixel
-;; Inputs: Var(X), Var(Y), Var(Color)
-;; Modifies: ST[R0], ST[R1], ST[R2]
+;; Modifies: R7
+;; Uses: R0 as column, R1 as row, R2 as color
+;; Preserves: R7
 ;----------------------------
 PIXEL_R0 .FILL 0
 PIXEL_R1 .FILL 0
@@ -265,7 +267,10 @@ DrawPixelSR
   LD R1, Y		; Y coordinate of ball starts at location 5
   LD R2, Color
 
-  TRAP x40			; Trap to OS to draw the ball
+  ; Draws a 4x4 pixel
+  ; Preconditions: R0 column, R1 row, R2 color
+  ; Postconditions: R0-7 Preserve
+  TRAP x40
 
   ; Reload values
   LD R0,PIXEL_R0
@@ -278,8 +283,9 @@ DrawPixelSR
 
 ;----------------------------
 ;; Runs the game loop
-;; Inputs:
-;; Modifies:
+;; Inputs: None
+;; Modifies: N/A
+;; Preserves: N/A
 ;----------------------------
 GAME_LOOP_RET .FILL 0
 
