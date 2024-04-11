@@ -6,13 +6,68 @@
 ;;|                                                                              |
 ;;+------------------------------------------------------------------------------+
 
+;;+------------------------------+
+;;|       Initialization         |
+;;+------------------------------+
 .orig x3000
-
 START:
   ; Initial Game Setup and Frame Buffer Initialization
   JSR InitFrameBufferSR
 
   ; Initial boundary and Gameplay Objects Drawing
+  JSR InitializeGameSR
+
+  JSR GameLoopSR
+
+HALT
+
+;;+------------------------------+
+;;|       Subroutine Section     |
+;;+------------------------------+
+
+;; --- Constants Definition ---
+RED .FILL x7C00
+BLACK .FILL x0000
+GREEN .FILL x03E0
+WHITE .FILL x7FFF
+BLUE .FILL x001F
+
+VIDEO .FILL xC000
+DISPSIZE .FILL x3E00
+BRICK_COLOR .FILL 0
+WALL_COLOR .FILL 0
+
+BRICKS_REMAINING .FILL 10
+;; End of Constants
+
+;; --- Initialize Frame Buffer ---
+
+;----------------------------
+;; Clears the Frame Buffer
+;; Inputs: None
+;; Modifies: R2, R3, R5 (no storage)
+;----------------------------
+InitFrameBufferSR
+  LD R5,VIDEO ; R5 <- pointer to where pixels will be written
+  LD R2,BLACK ; Pixel color value
+  LD R3,DISPSIZE ; Total number of pixels in the display - Iterator value
+  DrawBuffer:
+    STR R2,R5,#0 ; Set pixel color
+    ADD R5,R5,#1 ; Increment pixel
+    ADD R3,R3,#-1 ; Decrement iterator
+    BRp DrawBuffer
+  RET
+
+;; --- Initialize Game Environment ---
+
+;----------------------------
+;; Initializes the Game environment
+;; Inputs: None
+;; Modifies: N/A
+;----------------------------
+INITGAME_RET .FILL 0
+InitializeGameSR
+  ST R7, INITGAME_RET
   LD R5,VIDEO
   LD R2,RED
   ST R2,WALL_COLOR
@@ -47,47 +102,10 @@ START:
   ST R0,Y
   JSR DrawPixelSR
 
-  JSR GameLoopSR
-
-HALT
-
-;;+--------------------------------------------------------------+
-;;|                         Subroutines                          |
-;;+--------------------------------------------------------------+
-
-;-- Constants --;
-RED .FILL x7C00
-BLACK .FILL x0000
-GREEN .FILL x03E0
-WHITE .FILL x7FFF
-BLUE .FILL x001F
-
-VIDEO .FILL xC000
-DISPSIZE .FILL x3E00
-BRICK_COLOR .FILL 0
-WALL_COLOR .FILL 0
-
-BRICKS_REMAINING .FILL 10
-
-;-- Initialize Frame Buffer --;
-
-;----------------------------
-;; Clears the Frame Buffer
-;; Inputs: None
-;; Modifies: R2, R3, R5 (no storage)
-;----------------------------
-InitFrameBufferSR
-  LD R5,VIDEO ; R5 <- pointer to where pixels will be written
-  LD R2,BLACK ; Pixel color value
-  LD R3,DISPSIZE ; Total number of pixels in the display - Iterator value
-  DrawBuffer:
-    STR R2,R5,#0 ; Set pixel color
-    ADD R5,R5,#1 ; Increment pixel
-    ADD R3,R3,#-1 ; Decrement iterator
-    BRp DrawBuffer
+  LD R7, GAMEINIT_RET
   RET
 
-;-- Draw Game Boundary Walls --;
+;; --- Draw Game Boundary Walls ---
 
 ;----------------------------
 ;; Draws the top part of the boundary
@@ -158,7 +176,7 @@ DrawBottomSR
   LD R7,TEMP
   RET
 
-;-- Initialize Gameplay Elements --;
+;; --- Initialize Gameplay Elements ---
 
 ;----------------------------
 ;; Draws Bricks
@@ -206,7 +224,7 @@ DrawPixelSR
   LD R7,TEMP
   RET
 
-;-- Main Gameplay Loop --;
+;; --- Main Gameplay Loop ---
 
 ;----------------------------
 ;; Runs the game loop
@@ -238,7 +256,7 @@ GameLoopSR
   LD R7,GAME_LOOP_RET
   RET
 
-;-- Utility Functions --;
+;; --- Utility Functions ---
 
 ;----------------------------
 ;;
@@ -260,7 +278,7 @@ DelayLoopSR
   LD R7,DELAY_LOOP_RET
 	RET
 
-;-- Ball Physics and Collision Detection --;
+;; --- Ball Physics and Collision Detection ---
 
 ;----------------------------
 ;; Performs a "Tick" for the game
@@ -529,7 +547,10 @@ GAME_OVER
 HALT
 
 
-;-- Hardcoded Values --;
+;; --------------------------------------------------------------------------------
+;; End of Program. Below are the placeholders and dummy values for game elements.
+;; --------------------------------------------------------------------------------
+
 COLOR .FILL 0
 X .FILL 0
 Y .FILL 0
