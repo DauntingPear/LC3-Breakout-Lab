@@ -83,11 +83,22 @@ InitializeGameSR
   ST R2,WALL_COLOR ; Store color for later use
 
   ; Draw top of boundary
-  ; Preconditions:
-  ; Postconditions: Top of boundary is drawn.
+  ; Preconditions: R2 boundary color
+  ; Postconditions: Top of boundary is drawn. R2,R3,R5,R6 preserved.
+  ;   R0, R1, R4 used. R7 is return address.
   JSR DrawTopSR
-  JSR DrawSideSR ; Draw sides of boundary
-  JSR DrawBottomSR ; Draw bottom of boundary
+
+  ; Draw side of boundary
+  ; Preconditions: R2 bondary color
+  ; Postconditoins: Sides of boundary is drawn. R2, R4, R6 preserved.
+  ;   R0, R1, R3, R5 used. R7 is return address.
+  JSR DrawSideSR
+
+  ; Draw bottom of boundary
+  ; Preconditions: R2 boundary color
+  ; Postconditions: Bottom of boundary is drawn. R2, R5, R6 preserved.
+  ;   R0, R1, R3, R4 used. R7 is return address.
+  JSR DrawBottomSR
 
   LD R2,GREEN ; Load color of brick
   ST R2,BRICK_COLOR ; Store for later use
@@ -100,40 +111,44 @@ InitializeGameSR
   ADD R1,R1,#2 ; Set row for brick
 
   ; Draw Bricks
-  ST R3,INITGAME_TEMP
-  AND R3,R3,#0
-  ADD R3,R3,#3 ; 3 bricks in game
+  ST R3,INITGAME_TEMP ; Store for later use
+  AND R3,R3,#0 ; Clear register
+  ADD R3,R3,#3 ; Load 3, 3 bricks in game
 
   DrawBricksLoop:
     ; Draws bricks
-    ; Preconditions:
+    ; Preconditions: R0 starting column, R1 starting row, R2 color
     ; Postconditions
     JSR DrawBrickSR
-    ADD R0,R0,#1
-    ADD R3,R3,#-1
-    BRz DrawBricksLoop
+    ADD R0,R0,#1 ; Jump over space between bricks
+    ADD R3,R3,#-1 ; Decrement iterator
+    BRp DrawBricksLoop ; Branch to DrawBricksLoop if iterations remaining
 
-    LD R3,INITGAME_TEMP
+  LD R3,INITGAME_TEMP ; Restore
 
+  ; R0 no longer needed, using for copying values
   LD R0,BALL_COLOR
   ST R0,Color
   LD R0,BALL_X
   ST R0,X
   LD R0,BALL_Y
   ST R0,Y
+
+  ; Draws the ball
+  ; Preconditions:
+  ; Postconditions:
   JSR DrawPixelSR
 
-  LD R7, GAMEINIT_RET
+  LD R7, GAMEINIT_RET ; Restore return value
   RET
 
 ;; --- Draw Game Boundary Walls ---
 
 ;----------------------------
 ;; Draws the top part of the boundary
-;; Inputs:
-;;  R2 -> Boundary Color
-;;  R5 -> Frame Buffer start
-;; Modifies: R0, R1, R4, ST[R7]
+;; Modifies: R4, R0, R1
+;; Uses: R0 as column, R1 as row, R2 as color
+;; Preserves: R7 (return address)
 ;----------------------------
 DrawTopSR
 	LD R4,WIDTH	; We need 4 such rows of length 84 decimal each
@@ -142,6 +157,9 @@ DrawTopSR
 
 	ST R7, TEMP
   DrawTop:
+    ; Draws a 4x4 pixel
+    ; Preconditions: R0 column, R1 row, R2 color
+    ; Postconditions: R0-7 Preserved
     TRAP x40
     ADD R0, R0, #1
     ADD R4, R4, #-1
@@ -151,10 +169,10 @@ DrawTopSR
 
 ;----------------------------
 ;; Draws sides of boundary
-;; Inputs:
-;;  R2 -> Boundary Color
-;;  R5 -> Frame Buffer start
-;; Modifies: R0, R1, R3
+;; Modifies: R0, R1, R3, R5
+;; Uses: R2 as pixel color, R3 as height to draw. R5 as right side offset
+;;  R1 as row, R0 as column
+;; Preserves: R7 (return address)
 ;----------------------------
 DrawSideSR
   ; Set draw column
@@ -166,6 +184,9 @@ DrawSideSR
   ST R7,TEMP
   DrawSide:
     AND R0,R0,#0 ; Set Column pointer
+    ; Draws a 4x4 pixel
+    ; Preconditions: R0 column, R1 row, R2 color
+    ; Postconditions: R0-7 Preserved
     TRAP x40 ; Draw Left Side
     ADD R0,R0,R5
     TRAP x40 ; Draw Right Side
@@ -177,8 +198,10 @@ DrawSideSR
 
 ;----------------------------
 ;; Draws bottom side of boundary
-;; Inputs: None
-;; Modifies: R0, R1, R3, R4
+;; Modifies: R0, R1, R3, R4, R7
+;; Uses: R0 as column, R1 as row, R2 as color, R4 as width to draw,
+;;  R3 as height offset
+;; Preserves: R7 (return address)
 ;----------------------------
 DrawBottomSR
   LD R0,ZERO
@@ -190,6 +213,9 @@ DrawBottomSR
 
   ST R7,TEMP
   DrawBottom:
+    ; Draws a 4x4 pixel
+    ; Preconditions: R0 column, R1 row, R2 color
+    ; Postconditions: R0-7 Preserved
     TRAP x40
     ADD R0,R0,#1
     ADD R4,R4,#-1
@@ -209,6 +235,9 @@ DrawBrickSR
 
   ST R7,TEMP
   DrawBrick:
+    ; Draws a 4x4 pixel
+    ; Preconditions: R0 column, R1 row, R2 color
+    ; Postconditions: R0-7 Preserved
     TRAP x40
     ADD R0,R0,#1
     ADD R4,R4,#-1
