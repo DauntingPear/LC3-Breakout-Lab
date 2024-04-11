@@ -283,8 +283,8 @@ DrawPixelSR
 
 ;----------------------------
 ;; Runs the game loop
-;; Inputs: None
 ;; Modifies: N/A
+;; Uses: N/A
 ;; Preserves: N/A
 ;----------------------------
 GAME_LOOP_RET .FILL 0
@@ -294,6 +294,9 @@ GameLoopSR
   GameLoop	; This label is used as the main game loop, so return here as long as there are still bricks in the game!
     ; Put some delay to slow down the ball
 
+    ; Delay between frame updates
+    ; Preconditions: None
+    ; Postconditions: Passes time, R6 used as delay. R7 is return address.
     JSR DelayLoopSR
 
     LD R0,BALL_X
@@ -302,6 +305,9 @@ GameLoopSR
     LD R3,BALL_Y_DIR
 
     ; Calculates next position, then runs SRs for collisions
+    ; Preconditions: R0 as ball X position, R1 as ball Y position,
+    ;   R2 as ball X direction, R3 as ball Y direction
+    ; Postconditions:
     JSR BallTickSR
 
     LD R0,BRICKS_REMAINING
@@ -315,9 +321,10 @@ GameLoopSR
 ;; --- Utility Functions ---
 
 ;----------------------------
-;;
-;; Delay Loop
-;;
+;; Delay loop adds delay between game ticks
+;; Modifies: R6, R7
+;; Uses: R6 as delay value
+;; Preserves: R7 as return value
 ;----------------------------
 DELAY .FILL 8000
 DELAY_LOOP_RET .FILL 0
@@ -338,28 +345,40 @@ DelayLoopSR
 
 ;----------------------------
 ;; Performs a "Tick" for the game
-;; Inputs:
-;;   - R0 -> Ball X position
-;;   - R1 -> Ball Y position
-;;   -
+;; Modifies:
+;; Uses:
+;; Preserves: R7 as return address,
 ;----------------------------
 BALLTICK_RET .FILL 0
 BALLTICK_R3 .FILL 0
 
 BallTickSR
 
-  ST R7,BALLTICK_RET
+  ST R7,BALLTICK_RET ; store return address for later
+  ; Calculates next position
+  ; Preconditions: R0 as current column, R1 as current row, R2 as
+  ;   X direction, R3 as Y direction
+  ; Postconditions: The next position is calculated and stored in NPX,NPY,
+  ;   R0 is next position column, R1 is next position row. R7 is return address.
   JSR NextPositionSR
 
-  ;; IN R0 -> x column, R1 -> y row
-  ;; OUT R5 -> NextColor
+  ; Gets color at next location
+  ; Preconditions: R0 as next position column, R1 as next position row
+  ; Postconditions: R5 as color at next position. R7 as return address.
   TRAP x41
-  LD R0,BALL_X
-  LD R1,BALL_Y
-  ST R3,BALLTICK_R3
+
+  LD R0,BALL_X ; replace next pos column with current
+  LD R1,BALL_Y ; replace next pos row with current
+  ST R3,BALLTICK_R3 ; store Y direction in temp variable
+  ; store color in R3
   AND R3,R3,#0
   ADD R3,R3,R5
 
+  ; Determines wall collision, brick collision, bottom collision
+  ; Preconditions: R0 as current ball X, R1 as current ball Y,
+  ;   R2 as ball X direction, R3 as next color, R5 as next color
+  ; Postconditions: R4 used, R0 changed, R1 changed, R3 may change,
+  ;    R2 may change. Ball moves or game ends.
   JSR BallCollisionSR
 
   LD R6,BLACK
@@ -425,14 +444,9 @@ NextPositionSR
 
 ;----------------------------
 ;; Ball Collision Logic
-;; Inputs:
-;;  VAR(BALL_X,R0)
-;;  VAR(BALL_Y,R1)
-;;  VAR(BALL_X_DIR,R2)
-;;  VAR(BALL_Y_DIR,R3)
-;;  VAR(WALL_COLOR,R4)
-;;  R5 -> Next pixel color
-;; Modifies: R4
+;; Modifies:
+;; Uses: R0, R4, R1,
+;; Preserves:
 ;----------------------------
 COLLISION_RET .FILL 0
 TEMP_R0 .FILL 0
