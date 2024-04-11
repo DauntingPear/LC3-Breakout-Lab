@@ -12,11 +12,19 @@
 .orig x3000
 START:
   ; Initial Game Setup and Frame Buffer Initialization
+  ; Preconditions: None
+  ; Postconditions: Video buffer filled with black pixels, R0/R1/R4/R6 preserved
   JSR InitFrameBufferSR
 
   ; Initial boundary and Gameplay Objects Drawing
+  ; Preconditions: None
+  ; Postconditions: Draws game boundaries, initializes game environment,
+  ; draws ball. Register returns not considered
   JSR InitializeGameSR
 
+  ; Main Game loop
+  ; Preconditions: None
+  ; Postconditions: End of game, program has finished
   JSR GameLoopSR
 
 HALT
@@ -44,13 +52,14 @@ BRICKS_REMAINING .FILL 10
 
 ;----------------------------
 ;; Clears the Frame Buffer
-;; Inputs: None
-;; Modifies: R2, R3, R5 (no storage)
+;; Modifies: R5, R2, R3
+;; Uses: R2 for pixel color, R3 pixels in the display - iterator, R5 pixel address
+;; Preserves: R7 (return address)
 ;----------------------------
 InitFrameBufferSR
   LD R5,VIDEO ; R5 <- pointer to where pixels will be written
-  LD R2,BLACK ; Pixel color value
-  LD R3,DISPSIZE ; Total number of pixels in the display - Iterator value
+  LD R2,BLACK ; R2 <- Pixel color value
+  LD R3,DISPSIZE ; R3 <- Total number of pixels in the display - Iterator value
   DrawBuffer:
     STR R2,R5,#0 ; Set pixel color
     ADD R5,R5,#1 ; Increment pixel
@@ -62,37 +71,49 @@ InitFrameBufferSR
 
 ;----------------------------
 ;; Initializes the Game environment
-;; Inputs: None
 ;; Modifies: N/A
+;; Uses: None
 ;----------------------------
 INITGAME_RET .FILL 0
+INITGAME_TEMP .FILL 0
 InitializeGameSR
-  ST R7, INITGAME_RET
+  ST R7, INITGAME_RET ; Store return address for later use
   LD R5,VIDEO
   LD R2,RED
-  ST R2,WALL_COLOR
+  ST R2,WALL_COLOR ; Store color for later use
 
-  ; Draw Sides
+  ; Draw top of boundary
+  ; Preconditions:
+  ; Postconditions: Top of boundary is drawn.
   JSR DrawTopSR
-  JSR DrawSideSR
-  JSR DrawBottomSR
+  JSR DrawSideSR ; Draw sides of boundary
+  JSR DrawBottomSR ; Draw bottom of boundary
 
-  LD R2,GREEN
-  ST R2,BRICK_COLOR
+  LD R2,GREEN ; Load color of brick
+  ST R2,BRICK_COLOR ; Store for later use
   ; Set column
-  AND R0,R0,#0
-  ADD R0,R0,#2
+  AND R0,R0,#0 ; Clear register
+  ADD R0,R0,#2 ; Set column for brick
 
   ; Set row
-  AND R1,R1,#0
-  ADD R1,R1,#2
+  AND R1,R1,#0 ; Clear register
+  ADD R1,R1,#2 ; Set row for brick
 
   ; Draw Bricks
-  JSR DrawBrickSR
-  ADD R0,R0,#1
-  JSR DrawBrickSR
-  ADD R0,R0,#1
-  JSR DrawBrickSR
+  ST R3,INITGAME_TEMP
+  AND R3,R3,#0
+  ADD R3,R3,#3 ; 3 bricks in game
+
+  DrawBricksLoop:
+    ; Draws bricks
+    ; Preconditions:
+    ; Postconditions
+    JSR DrawBrickSR
+    ADD R0,R0,#1
+    ADD R3,R3,#-1
+    BRz DrawBricksLoop
+
+    LD R3,INITGAME_TEMP
 
   LD R0,BALL_COLOR
   ST R0,Color
@@ -433,8 +454,8 @@ BallCollisionSR
 
 ;----------------------------
 ;; Logic for ball colliding with a wall
-;; Inputs:
-;; Modifies:
+;; Inputs: R0
+;; Modifies: R1, R0, R3, R2
 ;----------------------------
 WALL_COL_RET .FILL 0
 
