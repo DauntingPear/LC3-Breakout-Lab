@@ -253,55 +253,47 @@ BallCollisionSR
 
 WALL:
   ST R5,NEXTCOLOR_TEMP
-  AND R7,R7,#0
 
-  Check_Right
-    LD R0,BALL_X
-    LD R1,BALL_Y
-    ADD R0,R0,#1 ; Check pixel to right
-    TRAP x41
-    NOT R5,R5
-    ADD R5,R5,#1
-    ADD R6,R2,R5
-    BRnp Check_Left
+  ; If next column is left wall, flip x direction
+  LeftWall
+    LD R6,NPX
+    BRnp RightWall
+    NOT R3,R3
+    ADD R3,R3,#1
+    ST R3,BALL_X_DIR
+  RightWall
+    LD R6,RIGHT_COL
+    LD R7,NPX
+    NOT R7,R7
     ADD R7,R7,#1
-  Check_Left
-    LD R0,BALL_X
-    LD R1,BALL_Y
-    ADD R0,R0,#-1 ; Check pixel to left
-    TRAP x41
-    NOT R5,R5
-    ADD R5,R5,#1
-    ADD R6,R2,R5
-    BRnp Check_Top
+    ADD R6,R6,R7
+    BRnp TopWall
+    NOT R3,R3
+    ADD R3,R3,#1
+    ST R3,BALL_X_DIR
+  TopWall
+    LD R6,NPY
+    BRnp BottomWall
+    NOT R4,R4
+    ADD R4,R4,#1
+    ST R4,BALL_Y_DIR
+  BottomWall
+    LD R6,BOTTOM_ROW
+    LD R7,NPY
+    NOT R7,R7
     ADD R7,R7,#1
-  Check_Top
-    LD R0,BALL_X
-    LD R1,BALL_Y
-    ADD R1,R1,#-1 ; Check pixel above
-    TRAP x41
-    NOT R5,R5
-    ADD R5,R5,#1
-    ADD R6,R2,R5
-    BRnp Check_Bottom
-    ADD R7,R7,#1
-  Check_Bottom
-    LD R0,BALL_X
-    LD R1,BALL_Y
-    ADD R1,R1,#1 ; Check pixel below
-    TRAP x41
-    NOT R5,R5
-    ADD R5,R5,#1
-    ADD R6,R2,R5
-    BRnp Corners_Done
-    ADD R7,R7,#1
-  Corners_Done
-    ADD R7,R7,#-2
-    HALT
+    ADD R6,R6,R7
+    BRnp WallFinish
+    NOT R4,R4
+    ADD R4,R4,#1
+    ST R4,BALL_Y_DIR
+
+  WallFinish
+    JSR NextPosSR
+    LD R7,COLL_RET
+    RET
 
 
-  LD R7,COLL_RET
-  RET
 
 
 
