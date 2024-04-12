@@ -1,58 +1,39 @@
-;;
-;; Author: Adrian Brady
-;; Date: 04/01/2024
-;; Purpose: Breakout Game Lab for Computer Engineering class spring 2024 MATC.
-;;
+;;+------------------------------------------------------------------------------+
+;;|                                                                              |
+;;|  Author: Adrian Brady                                                        |
+;;|  Date: 04/01/2024                                                            |
+;;|  Purpose: Breakout Game Lab for Computer Engineering class spring 2024 MATC. |
+;;|                                                                              |
+;;+------------------------------------------------------------------------------+
 
-;; -----------------------------------------------------------------------------
-
+;;+------------------------------+
+;;|       Initialization         |
+;;+------------------------------+
 .orig x3000
-
-START: ;; CLEAR THE SCREEN
+START:
+  ; Initial Game Setup and Frame Buffer Initialization
+  ; Preconditions: None
+  ; Postconditions: Video buffer filled with black pixels, R0/R1/R4/R6 preserved
   JSR InitFrameBufferSR
 
-  LD R5,VIDEO
-  LD R2,RED
-  ST R2,WALL_COLOR
+  ; Initial boundary and Gameplay Objects Drawing
+  ; Preconditions: None
+  ; Postconditions: Draws game boundaries, initializes game environment,
+  ; draws ball. Register returns not considered. R7 is return address.
+  JSR InitializeGameSR
 
-  ; Draw Sides
-  JSR DrawTopSR
-  JSR DrawSideSR
-  JSR DrawBottomSR
-
-  LD R2,GREEN
-  ST R2,BRICK_COLOR
-  ; Set column 
-  AND R0,R0,#0
-  ADD R0,R0,#2
-
-  ; Set row
-  AND R1,R1,#0
-  ADD R1,R1,#2
-
-  ; Draw Bricks
-  JSR DrawBrickSR
-  ADD R0,R0,#1
-  JSR DrawBrickSR
-  ADD R0,R0,#1
-  JSR DrawBrickSR
-
-  LD R0,BALL_COLOR
-  ST R0,Color
-  LD R0,BALL_X
-  ST R0,X
-  LD R0,BALL_Y
-  ST R0,Y
-  JSR DrawPixelSR
-
+  ; Main Game loop
+  ; Preconditions: None
+  ; Postconditions: End of game, program has finished
   JSR GameLoopSR
 
 HALT
 
-;;+-----------------------------------------------------------------------------+
-;;|                                Subroutines                                  |
-;;+-----------------------------------------------------------------------------+
+;;+------------------------------+
+;;|       Subroutine Section     |
+;;+------------------------------+
 
+;; --- Constants Definition ---
 RED .FILL x7C00
 BLACK .FILL x0000
 GREEN .FILL x03E0
@@ -64,23 +45,21 @@ DISPSIZE .FILL x3E00
 BRICK_COLOR .FILL 0
 WALL_COLOR .FILL 0
 
-BRICKS_REMAINING .FILL 10
+BRICKS_REMAINING .FILL 25
+;; End of Constants
+
+;; --- Initialize Frame Buffer ---
 
 ;----------------------------
-;; === Initialize frame buffer ===
-;; R0
-;; R1
-;; R2 -> Color
-;; R3 -> Iterator value (total pixel count)
-;; R4
-;; R5 -> Pixel location
-;; R6
-;; R7 -> Return address
+;; Clears the Frame Buffer
+;; Modifies: R5, R2, R3
+;; Uses: R2 for pixel color, R3 pixels in the display - iterator, R5 pixel address
+;; Preserves: R7 (return address)
 ;----------------------------
 InitFrameBufferSR
   LD R5,VIDEO ; R5 <- pointer to where pixels will be written
-  LD R2,BLACK ; Pixel color value
-  LD R3,DISPSIZE ; Total number of pixels in the display - Iterator value
+  LD R2,BLACK ; R2 <- Pixel color value
+  LD R3,DISPSIZE ; R3 <- Total number of pixels in the display - Iterator value
   DrawBuffer:
     STR R2,R5,#0 ; Set pixel color
     ADD R5,R5,#1 ; Increment pixel
@@ -88,45 +67,126 @@ InitFrameBufferSR
     BRp DrawBuffer
   RET
 
+;; --- Initialize Game Environment ---
+
 ;----------------------------
-;;
-;; Draw box row
-;;
+;; Initializes the Game environment
+;; Modifies: N/A
+;; Uses: None
+;----------------------------
+INITGAME_RET .FILL 0
+INITGAME_TEMP .FILL 0
+InitializeGameSR
+  ST R7, INITGAME_RET ; Store return address for later use
+  LD R5,VIDEO
+  LD R2,RED
+  ST R2,WALL_COLOR ; Store color for later use
+
+  ; Draw top of boundary
+  ; Preconditions: R2 boundary color
+  ; Postconditions: Top of boundary is drawn. R2,R3,R5,R6 preserved.
+  ;   R0, R1, R4 used. R7 is return address.
+  JSR DrawTopSR
+
+  ; Draw side of boundary
+  ; Preconditions: R2 bondary color
+  ; Postconditoins: Sides of boundary is drawn. R2, R4, R6 preserved.
+  ;   R0, R1, R3, R5 used. R7 is return address.
+  JSR DrawSideSR
+
+  ; Draw bottom of boundary
+  ; Preconditions: R2 boundary color
+  ; Postconditions: Bottom of boundary is drawn. R2, R5, R6 preserved.
+  ;   R0, R1, R3, R4 used. R7 is return address.
+  JSR DrawBottomSR
+
+  LD R2,GREEN ; Load color of brick
+  ST R2,BRICK_COLOR ; Store for later use
+  ; Set column
+  AND R0,R0,#0 ; Clear register
+  ADD R0,R0,#2 ; Set column for brick
+
+  ; Set row
+  AND R1,R1,#0 ; Clear register
+  ADD R1,R1,#2 ; Set row for brick
+
+  ; Draw Bricks
+  ST R3,INITGAME_TEMP ; Store for later use
+  AND R3,R3,#0 ; Clear register
+  ADD R3,R3,#3 ; Load 3, 3 bricks in game
+
+  DrawBricksLoop:
+    ; Draws bricks
+    ; Preconditions: R0 starting column, R1 starting row, R2 color
+    ; Postconditions: Bricks are drawn, R4, R2, R1 and R0 used. R7 is return address.
+    JSR DrawBrickSR
+    ADD R0,R0,#1 ; Jump over space between bricks
+    ADD R3,R3,#-1 ; Decrement iterator
+    BRp DrawBricksLoop ; Branch to DrawBricksLoop if iterations remaining
+
+  LD R3,INITGAME_TEMP ; Restore
+
+  ; R0 no longer needed, using for copying values
+  LD R0,BALL_COLOR
+  ST R0,Color
+  LD R0,BALL_X
+  ST R0,X
+  LD R0,BALL_Y
+  ST R0,Y
+
+  ; Draws the ball, is a TRAP x40 wrapper
+  ; Preconditions: None
+  ; Postconditions: R7 return address
+  JSR DrawPixelSR
+
+  LD R7, INITGAME_RET ; Restore return value
+  RET
+
+;; --- Draw Game Boundary Walls ---
+
+;----------------------------
+;; Draws the top part of the boundary
+;; Modifies: R4, R0, R1
+;; Uses: R0 as column, R1 as row, R2 as color
+;; Preserves: R7 (return address)
 ;----------------------------
 DrawTopSR
 	LD R4,WIDTH	; We need 4 such rows of length 84 decimal each
 	AND R0,R0, #0
 	LD R1, ZERO
-	
+
 	ST R7, TEMP
   DrawTop:
+    ; Draws a 4x4 pixel
+    ; Preconditions: R0 column, R1 row, R2 color
+    ; Postconditions: R0-7 Preserved
     TRAP x40
     ADD R0, R0, #1
     ADD R4, R4, #-1
-    BRp DrawTop;	
+    BRp DrawTop;
     LD R7, TEMP
     RET
 
 ;----------------------------
-;;
-;; === Draw Sides ===
-;; R0 -> Column
-;; R1 -> Row
-;; R2 -> Color
-;; R3 -> Height Iteration Counter
-;; R5 -> Side distance between offset
-;; R6
-;; R7
+;; Draws sides of boundary
+;; Modifies: R0, R1, R3, R5
+;; Uses: R2 as pixel color, R3 as height to draw. R5 as right side offset
+;;  R1 as row, R0 as column
+;; Preserves: R7 (return address)
 ;----------------------------
 DrawSideSR
+  ; Set draw column
   AND R1,R1,#0
   ADD R1,R1,#1
-  LD R3,SIDEHEIGHT
-  LD R5,WIDTH
-  ADD R5,R5,#-1
+  LD R3,SIDEHEIGHT ; Set number of rows to draw (iterator)
+  LD R5,WIDTH ; Set position of right side
+  ADD R5,R5,#-1 ; off by 1
   ST R7,TEMP
   DrawSide:
     AND R0,R0,#0 ; Set Column pointer
+    ; Draws a 4x4 pixel
+    ; Preconditions: R0 column, R1 row, R2 color
+    ; Postconditions: R0-7 Preserved
     TRAP x40 ; Draw Left Side
     ADD R0,R0,R5
     TRAP x40 ; Draw Right Side
@@ -137,9 +197,11 @@ DrawSideSR
   RET
 
 ;----------------------------
-;;
-;; Draw Bottom
-;;
+;; Draws bottom side of boundary
+;; Modifies: R0, R1, R3, R4, R7
+;; Uses: R0 as column, R1 as row, R2 as color, R4 as width to draw,
+;;  R3 as height offset
+;; Preserves: R7 (return address)
 ;----------------------------
 DrawBottomSR
   LD R0,ZERO
@@ -151,6 +213,9 @@ DrawBottomSR
 
   ST R7,TEMP
   DrawBottom:
+    ; Draws a 4x4 pixel
+    ; Preconditions: R0 column, R1 row, R2 color
+    ; Postconditions: R0-7 Preserved
     TRAP x40
     ADD R0,R0,#1
     ADD R4,R4,#-1
@@ -158,50 +223,69 @@ DrawBottomSR
   LD R7,TEMP
   RET
 
+;; --- Initialize Gameplay Elements ---
+
 ;----------------------------
-;;
-;; Draw Bricks
-;;
+;; Draws Bricks
+;; Modifies: R4, R0, R7
+;; Uses: R4 as brick width iterator, R0 as column, R2 as color, R1 as row
+;; Preserves: R1-R3, R5, R6, R7 (return address)
 ;----------------------------
 DrawBrickSR
   LD R4,BRICKWIDTH
-  
+
   ST R7,TEMP
   DrawBrick:
+    ; Draws a 4x4 pixel
+    ; Preconditions: R0 column, R1 row, R2 color
+    ; Postconditions: R0-7 Preserved
     TRAP x40
     ADD R0,R0,#1
     ADD R4,R4,#-1
     BRp DrawBrick
   LD R7,TEMP
   RET
-  
+
 ;----------------------------
-;;
-;; Draw Pixel
-;;
+;; Draws a 4x4 pixel
+;; Modifies: R7
+;; Uses: R0 as column, R1 as row, R2 as color
+;; Preserves: R7
 ;----------------------------
 PIXEL_R0 .FILL 0
 PIXEL_R1 .FILL 0
 PIXEL_R2 .FILL 0
 DrawPixelSR
+  ; Store previous values to be restored later
   ST R0,PIXEL_R0
   ST R1,PIXEL_R1
   ST R2,PIXEL_R2
-  LD R0, X		; X coordinate of ball starts at location 5	
-  LD R1, Y		; Y coordinate of ball starts at location 5
+  ST R7,TEMP ; Store to return later
+
+  ; Load values
+  LD R0, BALL_X		; X coordinate of ball starts at location 5
+  LD R1, BALL_Y		; Y coordinate of ball starts at location 5
   LD R2, Color
-  ST R7,TEMP
-  TRAP x40			; Trap to OS to draw the ball
+
+  ; Draws a 4x4 pixel
+  ; Preconditions: R0 column, R1 row, R2 color
+  ; Postconditions: R0-7 Preserve
+  TRAP x40
+
+  ; Reload values
   LD R0,PIXEL_R0
   LD R1,PIXEL_R1
   LD R2,PIXEL_R2
   LD R7,TEMP
   RET
 
+;; --- Main Gameplay Loop ---
+
 ;----------------------------
-;;
-;; Game Loop
-;;
+;; Runs the game loop
+;; Modifies: N/A
+;; Uses: N/A
+;; Preserves: N/A
 ;----------------------------
 GAME_LOOP_RET .FILL 0
 
@@ -210,14 +294,20 @@ GameLoopSR
   GameLoop	; This label is used as the main game loop, so return here as long as there are still bricks in the game!
     ; Put some delay to slow down the ball
 
+    ; Delay between frame updates
+    ; Preconditions: None
+    ; Postconditions: Passes time, R6 used as delay. R7 is return address.
     JSR DelayLoopSR
-    
+
     LD R0,BALL_X
     LD R1,BALL_Y
     LD R2,BALL_X_DIR
     LD R3,BALL_Y_DIR
 
     ; Calculates next position, then runs SRs for collisions
+    ; Preconditions: R0 as ball X position, R1 as ball Y position,
+    ;   R2 as ball X direction, R3 as ball Y direction
+    ; Postconditions:
     JSR BallTickSR
 
     LD R0,BRICKS_REMAINING
@@ -228,11 +318,13 @@ GameLoopSR
   LD R7,GAME_LOOP_RET
   RET
 
+;; --- Utility Functions ---
 
 ;----------------------------
-;;
-;; Delay Loop
-;;
+;; Delay loop adds delay between game ticks
+;; Modifies: R6, R7
+;; Uses: R6 as delay value
+;; Preserves: R7 as return value
 ;----------------------------
 DELAY .FILL 8000
 DELAY_LOOP_RET .FILL 0
@@ -241,7 +333,7 @@ DelayLoopSR
   ST R7,DELAY_LOOP_RET
 
   LD R6,DELAY
-  
+
   DelayLoop:
     ADD R6,R6,#-1
     BRp DelayLoop
@@ -249,56 +341,63 @@ DelayLoopSR
   LD R7,DELAY_LOOP_RET
 	RET
 
+;; --- Ball Physics and Collision Detection ---
+
 ;----------------------------
-;;
-;; === Ball Tick ===
-;;
-;; R0 -> BALL_X
-;; R1 -> BALL_Y
-;; R2 -> BALL_X_DIR
-;; R3 -> BALL_Y_DIR
-;; VAR: BALL_COLOR
-;; VAR: WALL_COLOR
-;; VAR: BRICK_COLOR
+;; Performs a "Tick" for the game
+;; Modifies:
+;; Uses:
+;; Preserves: R7 as return address,
 ;----------------------------
 BALLTICK_RET .FILL 0
 BALLTICK_R3 .FILL 0
 
 BallTickSR
-  
-  ST R7,BALLTICK_RET
+
+  ST R7,BALLTICK_RET ; store return address for later
+  ; Calculates next position
+  ; Preconditions: R0 as current column, R1 as current row, R2 as
+  ;   X direction, R3 as Y direction
+  ; Postconditions: The next position is calculated and stored in NPX,NPY,
+  ;   R0 is next position column, R1 is next position row. R7 is return address.
   JSR NextPositionSR
-  
-  ;; IN R0 -> x column, R1 -> y row
-  ;; OUT R5 -> NextColor
+
+  ; Gets color at next location
+  ; Preconditions: R0 as next position column, R1 as next position row
+  ; Postconditions: R5 as color at next position. R7 as return address.
   TRAP x41
-  LD R0,BALL_X
-  LD R1,BALL_Y
-  ST R3,BALLTICK_R3
+
+  LD R0,BALL_X ; replace next pos column with current
+  LD R1,BALL_Y ; replace next pos row with current
+  ST R3,BALLTICK_R3 ; store Y direction in temp variable
+  ; store color in R3
   AND R3,R3,#0
   ADD R3,R3,R5
 
+  ; Determines wall collision, brick collision, bottom collision
+  ; Preconditions: R0 as current ball X, R1 as current ball Y,
+  ;   R2 as ball X direction, R3 as next color, R5 as next color
+  ; Postconditions: R4 used, R0 changed, R1 changed, R3 may change,
+  ;    R2 may change. Ball moves or game ends.
   JSR BallCollisionSR
-  
+
   LD R6,BLACK
   ST R6,COLOR
   JSR DrawPixelSR
 
   ST R0,BALL_X
-  ST R0,X
   ST R1,BALL_Y
-  ST R1,Y
   ST R2,BALL_X_DIR
   LD R3,BALLTICK_R3
   ST R3,BALL_Y_DIR
   LD R6,BALL_COLOR
   ST R6,COLOR
-  
+
   JSR DrawPixelSR
 
   LD R7,BALLTICK_RET
   RET
-  
+
 ;----------------------------
 ;;
 ;; === Calculate Next Location ===
@@ -309,16 +408,13 @@ BallTickSR
 ;; R3 -> BALL_Y_DIR
 ;; VAR: BALL_COLOR
 ;----------------------------
+BALL_COLOR .FILL x8AA8
 NPX .FILL 0
 NPY .FILL 0
 NP0 .FILL 0
 NP1 .FILL 0
 NP2 .FILL 0
 NP3 .FILL 0
-NP4 .FILL 0
-NP5 .FILL 0
-NP6 .FILL 0
-NP7 .FILL 0
 
 NEXTPOS_RET .FILL 0
 
@@ -329,10 +425,6 @@ NextPositionSR
   ST R1,NP1
   ST R2,NP2
   ST R3,NP3
-  ST R4,NP4
-  ST R5,NP5
-  ST R6,NP6
-  ST R7,NP7
 
   ADD R0,R0,R2 ;; Incr/Decr X position -- depends on direction of ball (+1/-1)
   ADD R1,R1,R3 ;; Incr/Decr Y position -- depends on direction of ball (+1/-1)
@@ -342,23 +434,11 @@ NextPositionSR
   RET
 
 ;----------------------------
-;;
-;; === Ball Collision SR ===
-;; 
-;; R0 -> BALL_X
-;; R1 -> BALL_Y
-;; R2 -> BALL_X_DIR
-;; R3 -> BALL_Y_DIR
-;; R4 -> Color Check
-;; R5 -> NEXTCOLOR
-;; R6 -> 
-
-;; RED -> x7C00
-;; BLACK -> x0000
-;; GREEN -> x03E0
-;; WHITE -> x7FFF
-;; BLUE -> x001F
-;;
+;; Ball Collision Logic
+;; Modifies: R4
+;; Uses: R0 as current ball X, R1 as current ball Y,
+;;    R2 as ball X direction, R3 as next color, R5 as next color
+;; Preserves: R7
 ;----------------------------
 COLLISION_RET .FILL 0
 TEMP_R0 .FILL 0
@@ -369,7 +449,7 @@ TEMP_R3 .FILL 0
 BallCollisionSR
   ST R7,COLLISION_RET
 
-  ;; Check for wall
+  ;; Check for wall by subtracting wall color from next pixel color
   ;; Negate R4 (wall color) for subtraction
   LD R4,WALL_COLOR
   NOT R4,R4
@@ -379,7 +459,7 @@ BallCollisionSR
   ST R0,TEMP_R0
   BRz WallCollision
 
-  ;; Check for brick
+  ;; Check for brick by subtracting wall color from next pixel color
   ;; Negate R4 (brick color) for subtraction
   LD R4,BRICK_COLOR
   NOT R4,R4
@@ -387,7 +467,7 @@ BallCollisionSR
 
   ADD R4,R4,R5
   BRz BrickCollision
-  
+
   ;TODO Check if bottom of screen
   ;; Check for bottom
   ;; Negate R4 (height of play area)
@@ -400,7 +480,7 @@ BallCollisionSR
   BRp BottomCollision
 
   Collision ; Label to jump to for wall and brick collision. Allows for value updates.
-  
+
   LD R0,NPX
   LD R1,NPY
 
@@ -413,16 +493,11 @@ BallCollisionSR
   LD R7,COLLISION_RET
   RET
 
-
-
-  
-  
-  
-
 ;----------------------------
-;;
-;; === Wall Collision ===
-;;
+;; Logic for ball colliding with a wall
+;; Modifies:
+;; Uses:
+;; Preserves:
 ;----------------------------
 WALL_COL_RET .FILL 0
 
@@ -432,11 +507,11 @@ WallCollision
 
 WallCollisionSR
   ST R7,WALL_COL_RET
-  
+
   ST R1,TEMP_R1
   ;; Right Wall -> Checks if ball column is column 19
   LD R1,WIDTH
-  ADD R1,R1,#-1 ; Set to max position of ball (21-2=19)
+  ADD R1,R1,#-2 ; Set to max position of ball (21-2=19)
   NOT R1,R1
   ADD R1,R1,#1
   ADD R1,R1,R0
@@ -454,9 +529,10 @@ WallCollisionSR
   NOT R1,R1
   ADD R1,R1,#1
   ST R1,BALL_Y_DIR
-  
+
   CollisionReturn
 
+  LD R0,TEMP_R0
   LD R1,TEMP_R1
   LD R3,BALL_Y_DIR
   LD R2,BALL_X_DIR
@@ -467,24 +543,50 @@ WallCollisionSR
 
 FLIP_VERTICAL
   ;;TODO check for top corner
-
-  ;; TODO check for bottom corner
+  LD R0,NPX
+  BRz CORNER_CHECK ; Check if next row is top row
+  LD R1,SIDEHEIGHT
+  NOT R1,R1
+  ADD R1,R1,#1
+  ADD R1,R1,R0 ; Check if next row is bottom row
+  BRz CORNER_CHECK
 
   ;; Otherwise, flip x direction
-  LD R1,BALL_X_DIR
-  NOT R1,R1
-  ST R1,BALL_X_DIR
-  ADD R1,R1,#1
-  ST R1,BALL_X_DIR
-  BR CollisionReturn
+  NO_CORNER:
+    LD R1,BALL_X_DIR
+    NOT R1,R1
+    ADD R1,R1,#1
+    ST R1,BALL_X_DIR
+    BRnzp CollisionReturn
 
-FLIP_CORNER
+  CORNER_CHECK:
+    LD R0,NPY
+    BRz CORNER ; Check if next column is leftmost
+    LD R1,WIDTH
+    NOT R1,R1
+    ADD R1,R1,#1
+    ADD R1,R1,R0
+    BRz CORNER ; Check if next column is rightmost
+    BRnzp NO_CORNER
 
+
+  CORNER:
+    LD R1,BALL_X_DIR
+    NOT R1,R1
+    ADD R1,R1,#1
+    ST R1,BALL_X_DIR
+
+    LD R1,BALL_Y_DIR
+    NOT R1,R1
+    ADD R1,R1,#1
+    ST R1,BALL_Y_DIR
+
+    BR CollisionReturn
 
 ;----------------------------
-;;
-;; === Brick Collision ===
-;;
+;; Logic for ball colliding with a brick
+;; Inputs:
+;; Modifies:
 ;----------------------------
 BRICK_COL_RET .FILL 0
 
@@ -500,9 +602,9 @@ BrickCollisionSR
   RET
 
 ;----------------------------
-;;
-;; === Check for bottom of screen ===
-;;
+;; Logic for ball colliding with the bottom of the border, out of bounds
+;; Inputs:
+;; Modifies:
 ;----------------------------
 BOTTOM_COL_RET .FILL 0
 BottomCollision
@@ -524,21 +626,21 @@ BALLDIR_RET .FILL 0
 
 BallDirSR
 
+;-- Game Over Logic --;
 
 ;----------------------------
+;; Game Over Logic
 ;;
-;; === Game Over ===
 ;;
 ;----------------------------
 GAME_OVER
 HALT
 
 
-;----------------------------
-;;
-;; <======== Hardcoded values ========>
-;;
-;----------------------------
+;; --------------------------------------------------------------------------------
+;; End of Program. Below are the placeholders and dummy values for game elements.
+;; --------------------------------------------------------------------------------
+
 COLOR .FILL 0
 X .FILL 0
 Y .FILL 0
@@ -554,9 +656,8 @@ BRICKWIDTH .FILL 5
 
 BALL_X	.FILL 5
 BALL_Y .FILL 5
-BALL_X_DIR .FILL #-1
+BALL_X_DIR .FILL #1
 BALL_Y_DIR .FILL 1
-BALL_COLOR .FILL x8AA8
 
 TEMP .FILL 0
 

@@ -1,5 +1,5 @@
 reset
 as lc3os.asm
 ld lc3os.obj
-as starter_code.asm
-ld starter_code.obj
+as lab.asm
+ld lab.obj
