@@ -45,7 +45,7 @@ DISPSIZE .FILL x3E00
 BRICK_COLOR .FILL 0
 WALL_COLOR .FILL 0
 
-BRICKS_REMAINING .FILL 10
+BRICKS_REMAINING .FILL 25
 ;; End of Constants
 
 ;; --- Initialize Frame Buffer ---
@@ -139,7 +139,7 @@ InitializeGameSR
   ; Postconditions: R7 return address
   JSR DrawPixelSR
 
-  LD R7, GAMEINIT_RET ; Restore return value
+  LD R7, INITGAME_RET ; Restore return value
   RET
 
 ;; --- Draw Game Boundary Walls ---
@@ -263,8 +263,8 @@ DrawPixelSR
   ST R7,TEMP ; Store to return later
 
   ; Load values
-  LD R0, X		; X coordinate of ball starts at location 5
-  LD R1, Y		; Y coordinate of ball starts at location 5
+  LD R0, BALL_X		; X coordinate of ball starts at location 5
+  LD R1, BALL_Y		; Y coordinate of ball starts at location 5
   LD R2, Color
 
   ; Draws a 4x4 pixel
@@ -386,9 +386,7 @@ BallTickSR
   JSR DrawPixelSR
 
   ST R0,BALL_X
-  ST R0,X
   ST R1,BALL_Y
-  ST R1,Y
   ST R2,BALL_X_DIR
   LD R3,BALLTICK_R3
   ST R3,BALL_Y_DIR
@@ -410,16 +408,13 @@ BallTickSR
 ;; R3 -> BALL_Y_DIR
 ;; VAR: BALL_COLOR
 ;----------------------------
+BALL_COLOR .FILL x8AA8
 NPX .FILL 0
 NPY .FILL 0
 NP0 .FILL 0
 NP1 .FILL 0
 NP2 .FILL 0
 NP3 .FILL 0
-NP4 .FILL 0
-NP5 .FILL 0
-NP6 .FILL 0
-NP7 .FILL 0
 
 NEXTPOS_RET .FILL 0
 
@@ -430,10 +425,6 @@ NextPositionSR
   ST R1,NP1
   ST R2,NP2
   ST R3,NP3
-  ST R4,NP4
-  ST R5,NP5
-  ST R6,NP6
-  ST R7,NP7
 
   ADD R0,R0,R2 ;; Incr/Decr X position -- depends on direction of ball (+1/-1)
   ADD R1,R1,R3 ;; Incr/Decr Y position -- depends on direction of ball (+1/-1)
@@ -444,9 +435,10 @@ NextPositionSR
 
 ;----------------------------
 ;; Ball Collision Logic
-;; Modifies:
-;; Uses: R0, R4, R1,
-;; Preserves:
+;; Modifies: R4
+;; Uses: R0 as current ball X, R1 as current ball Y,
+;;    R2 as ball X direction, R3 as next color, R5 as next color
+;; Preserves: R7
 ;----------------------------
 COLLISION_RET .FILL 0
 TEMP_R0 .FILL 0
@@ -457,7 +449,7 @@ TEMP_R3 .FILL 0
 BallCollisionSR
   ST R7,COLLISION_RET
 
-  ;; Check for wall
+  ;; Check for wall by subtracting wall color from next pixel color
   ;; Negate R4 (wall color) for subtraction
   LD R4,WALL_COLOR
   NOT R4,R4
@@ -467,7 +459,7 @@ BallCollisionSR
   ST R0,TEMP_R0
   BRz WallCollision
 
-  ;; Check for brick
+  ;; Check for brick by subtracting wall color from next pixel color
   ;; Negate R4 (brick color) for subtraction
   LD R4,BRICK_COLOR
   NOT R4,R4
@@ -503,8 +495,9 @@ BallCollisionSR
 
 ;----------------------------
 ;; Logic for ball colliding with a wall
-;; Inputs: R0
-;; Modifies: R1, R0, R3, R2
+;; Modifies:
+;; Uses:
+;; Preserves:
 ;----------------------------
 WALL_COL_RET .FILL 0
 
@@ -518,7 +511,7 @@ WallCollisionSR
   ST R1,TEMP_R1
   ;; Right Wall -> Checks if ball column is column 19
   LD R1,WIDTH
-  ADD R1,R1,#-1 ; Set to max position of ball (21-2=19)
+  ADD R1,R1,#-2 ; Set to max position of ball (21-2=19)
   NOT R1,R1
   ADD R1,R1,#1
   ADD R1,R1,R0
@@ -539,6 +532,7 @@ WallCollisionSR
 
   CollisionReturn
 
+  LD R0,TEMP_R0
   LD R1,TEMP_R1
   LD R3,BALL_Y_DIR
   LD R2,BALL_X_DIR
@@ -549,19 +543,45 @@ WallCollisionSR
 
 FLIP_VERTICAL
   ;;TODO check for top corner
-
-  ;; TODO check for bottom corner
+  LD R0,NPX
+  BRz CORNER_CHECK ; Check if next row is top row
+  LD R1,SIDEHEIGHT
+  NOT R1,R1
+  ADD R1,R1,#1
+  ADD R1,R1,R0 ; Check if next row is bottom row
+  BRz CORNER_CHECK
 
   ;; Otherwise, flip x direction
-  LD R1,BALL_X_DIR
-  NOT R1,R1
-  ST R1,BALL_X_DIR
-  ADD R1,R1,#1
-  ST R1,BALL_X_DIR
-  BR CollisionReturn
+  NO_CORNER:
+    LD R1,BALL_X_DIR
+    NOT R1,R1
+    ADD R1,R1,#1
+    ST R1,BALL_X_DIR
+    BRnzp CollisionReturn
 
-FLIP_CORNER
+  CORNER_CHECK:
+    LD R0,NPY
+    BRz CORNER ; Check if next column is leftmost
+    LD R1,WIDTH
+    NOT R1,R1
+    ADD R1,R1,#1
+    ADD R1,R1,R0
+    BRz CORNER ; Check if next column is rightmost
+    BRnzp NO_CORNER
 
+
+  CORNER:
+    LD R1,BALL_X_DIR
+    NOT R1,R1
+    ADD R1,R1,#1
+    ST R1,BALL_X_DIR
+
+    LD R1,BALL_Y_DIR
+    NOT R1,R1
+    ADD R1,R1,#1
+    ST R1,BALL_Y_DIR
+
+    BR CollisionReturn
 
 ;----------------------------
 ;; Logic for ball colliding with a brick
@@ -636,9 +656,8 @@ BRICKWIDTH .FILL 5
 
 BALL_X	.FILL 5
 BALL_Y .FILL 5
-BALL_X_DIR .FILL #-1
+BALL_X_DIR .FILL #1
 BALL_Y_DIR .FILL 1
-BALL_COLOR .FILL x8AA8
 
 TEMP .FILL 0
 
