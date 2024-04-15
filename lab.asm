@@ -199,6 +199,14 @@ BALL_Y .FILL 5
 BALL_X_DIR .FILL 1
 BALL_Y_DIR .FILL 1
 BALL_COLOR .FILL 0
+OS_TEMP_0 .FILL 0
+OS_TEMP_1 .FILL 0
+OS_TEMP_2 .FILL 0
+OS_TEMP_3 .FILL 0
+OS_TEMP_4 .FILL 0
+OS_TEMP_5 .FILL 0
+OS_TEMP_6 .FILL 0
+OS_TEMP_7 .FILL 0
 
 GameLoopSR
   GameLoop:
@@ -233,46 +241,66 @@ GameLoopSR
 ;; R6 used as temp value to check if color - nextcolor = 0
 ;----------------------------
 COLL_RET .FILL 0
+COLL_TEMP0 .FILL 0
+COLL_TEMP1 .FILL 0
+COLL_TEMP2 .FILL 0
+COLL_TEMP3 .FILL 0
+COLL_TEMP4 .FILL 0
+COLL_TEMP5 .FILL 0
+COLL_TEMP6 .FILL 0
+COLL_TEMP7 .FILL 0
+COLL_TEMP .FILL 0
 NEXTCOLOR_TEMP .FILL 0
 BallCollisionSR
   ST R7,COLL_RET
   ; Check for wall
   LD R2,WALL_COLOR
   ADD R6,R2,R5
-  BRz WALL
+  BRnp BrickCol
+  JSR WALL
 
+  BrickCol
+  ST R5,COLL_TEMP
   LD R2,BRICK_COLOR
   ADD R6,R2,R5
-  ;BRz BRICK
+  BRnp BottomCol
+  JSR BRICK
 
+  BottomCol
   ;BRnzp BOTTOM
 
   LD R7,COLL_RET
   RET
 
-
+; next color is not calculated again after determining the next pixel is a wall, after
+; direction has changed
+WallCol_RET .FILL 0
+;----------------------------
+;; Calculates if the wall is a corner
+;; Inputs: R0 as current col, R1 as current row, R3 as x dir, R4 as y dir
+;----------------------------
 WALL:
-  ST R5,NEXTCOLOR_TEMP
+  ST R7,WallCol_RET
 
   ; If next column is left wall, flip x direction
   LeftWall
-    LD R6,NPX
+    LD R0,NPX
     BRnp RightWall
     NOT R3,R3
     ADD R3,R3,#1
     ST R3,BALL_X_DIR
   RightWall
     LD R6,RIGHT_COL
-    LD R7,NPX
-    NOT R7,R7
-    ADD R7,R7,#1
+    LD R0,NPX
+    NOT R0,R0
+    ADD R0,R0,#1
     ADD R6,R6,R7
     BRnp TopWall
     NOT R3,R3
     ADD R3,R3,#1
     ST R3,BALL_X_DIR
   TopWall
-    LD R6,NPY
+    LD R1,NPY
     BRnp BottomWall
     NOT R4,R4
     ADD R4,R4,#1
@@ -290,12 +318,67 @@ WALL:
 
   WallFinish
     JSR NextPosSR
-    LD R7,COLL_RET
+    LD R7,WallCol_RET
     RET
 
 
+;----------------------------
+;; Calculates next position based on current position and direction
+;; Inputs: R0 as current col, R1 as current row, R3 as x dir, R4 as y dir
+;----------------------------
+TEMP .FILL 0
+BrickSR_RET .FILL 0
+Brick:
+  ST R7,BrickSR_RET
+  LD R0,NPX ; Load ball next column
+  ; Load Data for SR
+  AND R5,R5,#0
+  ADD R5,R5,#6 ; Load right bound
+  AND R4,R4,#0
+  ADD R4,R4,#-6
+  LD R6,NPX
+  JSR GetBrickSR
+
+  HALT ; should not reach
+
+; Checks to see if column is <= brick right bound, from brick1 to brick3 (LTR)
+GET_BRICK_RET .FILL 0
+GetBrickSR
+  ST R7,GET_BRICK_RET
+  AND R6,R6,#0
+  ADD R6,R6,#4 ; Iterator
+  GetBrickLoop:
+    ADD R6,R0,R4
+    BRnz DestroyBrick
+    ADD R4,R4,#-6
+    ADD R6,R6,#-1
+    BRp GetBrickLoop
+    HALT ; should not reach
+
+DestroyBrick ; Destroys brick
+  ; Set R7 to 5 (iterator)
+  AND R6,R6,#0
+  ADD R6,R6,#5
+
+  LD R2,BLACK
+  LD R1,NPY
+  NOT R4,R4
+  ADD R4,R4,#1
+  ADD R0,R4,#0 ; Set R0 to the column that R4 pointed to
+  DBLoop:
+    TRAP x40
+    ADD R0,R0,#-1
+    ADD R6,R6,#-1
+    BRp DBLoop
+  ;-- End DBLoop
 
 
+LD R7,BrickSR_RET
+RET
+
+VF_RET .FILL 0
+VerticalFlipSR
+  ST R7,VF_RET
 
 
 ;----------------------------
@@ -334,7 +417,7 @@ NextPosSR
 ;----------------------------
 ;; Adds delay to each game tick
 ;----------------------------
-DELAY .FILL 6000
+DELAY .FILL 9000
 DELAY_TEMP .FILL 0
 DelayLoopSR
   ST R6,DELAY_TEMP
