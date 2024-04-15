@@ -41,8 +41,6 @@ DISPSIZE .FILL x3E00
 BRICK_COLOR .FILL 0
 WALL_COLOR .FILL 0
 
-BRICKS_REMAINING .FILL 25
-
 ZERO .FILL 0
 ONE .FILL 1
 
@@ -199,6 +197,7 @@ BALL_Y .FILL 5
 BALL_X_DIR .FILL 1
 BALL_Y_DIR .FILL 1
 BALL_COLOR .FILL 0
+Bricks_Remaining .FILL 3
 
 GameLoopSR
   GameLoop:
@@ -225,7 +224,9 @@ GameLoopSR
 
     LD R2,BALL_COLOR
     TRAP x40
-    BRnzp GameLoop
+    LD R6,Bricks_Remaining
+    BRp GameLoop
+  HALT
 
 ;----------------------------
 ;; Detects if ball has hit a wall, corner, brick, or bottom
@@ -233,74 +234,157 @@ GameLoopSR
 ;; R6 used as temp value to check if color - nextcolor = 0
 ;----------------------------
 COLL_RET .FILL 0
+COLL_TEMP .FILL 0
 NEXTCOLOR_TEMP .FILL 0
 BallCollisionSR
   ST R7,COLL_RET
   ; Check for wall
   LD R2,WALL_COLOR
   ADD R6,R2,R5
-  BRz WALL
+  BRnp BrickCol
+  JSR WALL
 
+  BrickCol
+  ST R5,COLL_TEMP
   LD R2,BRICK_COLOR
   ADD R6,R2,R5
-  ;BRz BRICK
+  BRnp BottomCol
+  JSR BRICK
+  LD R7,COLL_RET
+  BRnzp BallCollisionSR
 
+  BottomCol
   ;BRnzp BOTTOM
 
   LD R7,COLL_RET
   RET
 
-
+; next color is not calculated again after determining the next pixel is a wall, after
+; direction has changed
+WallCol_RET .FILL 0
 WALL:
+  ST R7,WallCol_RET
   ST R5,NEXTCOLOR_TEMP
-  AND R7,R7,#0
 
-  Check_Right
-    LD R0,BALL_X
-    LD R1,BALL_Y
-    ADD R0,R0,#1 ; Check pixel to right
-    TRAP x41
-    NOT R5,R5
-    ADD R5,R5,#1
-    ADD R6,R2,R5
-    BRnp Check_Left
+  ; If next column is left wall, flip x direction
+  LeftWall
+    LD R6,NPX
+    BRnp RightWall
+    JSR FLIP_X
+
+  ; If next column is right wall, flip x
+  RightWall
+    LD R6,RIGHT_COL
+    LD R7,NPX
+    NOT R7,R7
     ADD R7,R7,#1
-  Check_Left
-    LD R0,BALL_X
-    LD R1,BALL_Y
-    ADD R0,R0,#-1 ; Check pixel to left
-    TRAP x41
-    NOT R5,R5
-    ADD R5,R5,#1
-    ADD R6,R2,R5
-    BRnp Check_Top
+    ADD R6,R6,R7
+    BRnp TopWall
+    JSR FLIP_X
+
+  ; If next row is top wall, flip y
+  TopWall
+    LD R6,NPY
+    BRnp BottomWall
+    JSR FLIP_Y
+
+  ; If next row is bottom wall, flip y
+  BottomWall
+    LD R6,BOTTOM_ROW
+    LD R7,NPY
+    NOT R7,R7
     ADD R7,R7,#1
-  Check_Top
-    LD R0,BALL_X
-    LD R1,BALL_Y
-    ADD R1,R1,#-1 ; Check pixel above
-    TRAP x41
-    NOT R5,R5
-    ADD R5,R5,#1
-    ADD R6,R2,R5
-    BRnp Check_Bottom
-    ADD R7,R7,#1
-  Check_Bottom
-    LD R0,BALL_X
-    LD R1,BALL_Y
-    ADD R1,R1,#1 ; Check pixel below
-    TRAP x41
-    NOT R5,R5
-    ADD R5,R5,#1
-    ADD R6,R2,R5
-    BRnp Corners_Done
-    ADD R7,R7,#1
-  Corners_Done
-    ADD R7,R7,#-2
-    HALT
+    ADD R6,R6,R7
+    BRnp WallFinish
+    JSR FLIP_Y
+
+  WallFinish
+    JSR NextPosSR
+    LD R7,WallCol_RET
+    RET
 
 
-  LD R7,COLL_RET
+;----------------------------
+;; Calculates next position based on current position and direction
+;; Inputs: R0 as current col, R1 as current row, R3 as x dir, R4 as y dir
+;----------------------------
+TEMP .FILL 0
+BrickSR_RET .FILL 0
+Brick:
+  ST R7,BrickSR_RET
+  LD R0,NPX ; Load ball next column
+  ; Load Data for SR
+  AND R5,R5,#0
+  ADD R5,R5,#6 ; Load right bound
+  AND R4,R4,#0
+  ADD R4,R4,#-6
+  LD R6,NPX
+  JSR GetBrickSR
+
+  HALT ; should not reach
+
+; Checks to see if column is <= brick right bound, from brick1 to brick3 (LTR)
+GET_BRICK_RET .FILL 0
+GetBrickSR
+  ST R7,GET_BRICK_RET
+  AND R6,R6,#0
+  ADD R6,R6,#4 ; Iterator
+  GetBrickLoop:
+    ADD R6,R0,R4
+    BRnz DestroyBrick
+    ADD R4,R4,#-6
+    ADD R6,R6,#-1
+    BRp GetBrickLoop
+    HALT ; should not reach
+
+DestroyBrick ; Destroys brick
+  ; Set R7 to 5 (iterator)
+  AND R6,R6,#0
+  ADD R6,R6,#5
+
+  LD R2,BLACK
+  LD R1,NPY
+  NOT R4,R4
+  ADD R4,R4,#1
+  ADD R0,R4,#0 ; Set R0 to the column that R4 pointed to
+  DBLoop:
+    TRAP x40
+    ADD R0,R0,#-1
+    ADD R6,R6,#-1
+    BRp DBLoop
+  ;-- End DBLoop
+; Check to see if horizontal or vertical flip
+LD R0,Bricks_Remaining
+ADD R0,R0,#-1
+ST R0,Bricks_Remaining
+LD R4,BALL_Y_DIR
+JSR FLIP_Y
+LD R0,BALL_X
+LD R1,BALL_Y
+JSR NextPosSR
+LD R7,BrickSR_RET
+RET
+
+;----------------------------
+;; Flips Ball_X_Dir
+;; Inputs: R3 as ball X dir
+;; Returns R3 as new ball X dir
+;----------------------------
+FLIP_X
+  NOT R3,R3
+  ADD R3,R3,#1
+  ST R3,BALL_X_DIR
+  RET
+
+;----------------------------
+;; Flips Ball_Y_Dir
+;; Inputs: R4 as ball Y dir
+;; Returns R4 as new ball Y dir
+;----------------------------
+FLIP_Y
+  NOT R4,R4
+  ADD R4,R4,#1
+  ST R4,BALL_Y_DIR
   RET
 
 
@@ -342,7 +426,7 @@ NextPosSR
 ;----------------------------
 ;; Adds delay to each game tick
 ;----------------------------
-DELAY .FILL 6000
+DELAY .FILL 9000
 DELAY_TEMP .FILL 0
 DelayLoopSR
   ST R6,DELAY_TEMP
