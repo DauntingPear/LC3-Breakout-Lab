@@ -41,8 +41,6 @@ DISPSIZE .FILL x3E00
 BRICK_COLOR .FILL 0
 WALL_COLOR .FILL 0
 
-BRICKS_REMAINING .FILL 25
-
 ZERO .FILL 0
 ONE .FILL 1
 
@@ -199,14 +197,7 @@ BALL_Y .FILL 5
 BALL_X_DIR .FILL 1
 BALL_Y_DIR .FILL 1
 BALL_COLOR .FILL 0
-OS_TEMP_0 .FILL 0
-OS_TEMP_1 .FILL 0
-OS_TEMP_2 .FILL 0
-OS_TEMP_3 .FILL 0
-OS_TEMP_4 .FILL 0
-OS_TEMP_5 .FILL 0
-OS_TEMP_6 .FILL 0
-OS_TEMP_7 .FILL 0
+Bricks_Remaining .FILL 3
 
 GameLoopSR
   GameLoop:
@@ -233,7 +224,9 @@ GameLoopSR
 
     LD R2,BALL_COLOR
     TRAP x40
-    BRnzp GameLoop
+    LD R6,Bricks_Remaining
+    BRp GameLoop
+  HALT
 
 ;----------------------------
 ;; Detects if ball has hit a wall, corner, brick, or bottom
@@ -241,14 +234,6 @@ GameLoopSR
 ;; R6 used as temp value to check if color - nextcolor = 0
 ;----------------------------
 COLL_RET .FILL 0
-COLL_TEMP0 .FILL 0
-COLL_TEMP1 .FILL 0
-COLL_TEMP2 .FILL 0
-COLL_TEMP3 .FILL 0
-COLL_TEMP4 .FILL 0
-COLL_TEMP5 .FILL 0
-COLL_TEMP6 .FILL 0
-COLL_TEMP7 .FILL 0
 COLL_TEMP .FILL 0
 NEXTCOLOR_TEMP .FILL 0
 BallCollisionSR
@@ -265,6 +250,8 @@ BallCollisionSR
   ADD R6,R2,R5
   BRnp BottomCol
   JSR BRICK
+  LD R7,COLL_RET
+  BRnzp BallCollisionSR
 
   BottomCol
   ;BRnzp BOTTOM
@@ -275,36 +262,33 @@ BallCollisionSR
 ; next color is not calculated again after determining the next pixel is a wall, after
 ; direction has changed
 WallCol_RET .FILL 0
-;----------------------------
-;; Calculates if the wall is a corner
-;; Inputs: R0 as current col, R1 as current row, R3 as x dir, R4 as y dir
-;----------------------------
 WALL:
   ST R7,WallCol_RET
+  ST R5,NEXTCOLOR_TEMP
 
   ; If next column is left wall, flip x direction
   LeftWall
-    LD R0,NPX
+    LD R6,NPX
     BRnp RightWall
-    NOT R3,R3
-    ADD R3,R3,#1
-    ST R3,BALL_X_DIR
+    JSR FLIP_X
+
+  ; If next column is right wall, flip x
   RightWall
     LD R6,RIGHT_COL
-    LD R0,NPX
-    NOT R0,R0
-    ADD R0,R0,#1
+    LD R7,NPX
+    NOT R7,R7
+    ADD R7,R7,#1
     ADD R6,R6,R7
     BRnp TopWall
-    NOT R3,R3
-    ADD R3,R3,#1
-    ST R3,BALL_X_DIR
+    JSR FLIP_X
+
+  ; If next row is top wall, flip y
   TopWall
-    LD R1,NPY
+    LD R6,NPY
     BRnp BottomWall
-    NOT R4,R4
-    ADD R4,R4,#1
-    ST R4,BALL_Y_DIR
+    JSR FLIP_Y
+
+  ; If next row is bottom wall, flip y
   BottomWall
     LD R6,BOTTOM_ROW
     LD R7,NPY
@@ -312,9 +296,7 @@ WALL:
     ADD R7,R7,#1
     ADD R6,R6,R7
     BRnp WallFinish
-    NOT R4,R4
-    ADD R4,R4,#1
-    ST R4,BALL_Y_DIR
+    JSR FLIP_Y
 
   WallFinish
     JSR NextPosSR
@@ -371,14 +353,41 @@ DestroyBrick ; Destroys brick
     ADD R6,R6,#-1
     BRp DBLoop
   ;-- End DBLoop
-
-
+; Check to see if horizontal or vertical flip
+LD R0,Bricks_Remaining
+ADD R0,R0,#-1
+ST R0,Bricks_Remaining
+LD R4,BALL_Y_DIR
+JSR FLIP_Y
+LD R0,BALL_X
+LD R1,BALL_Y
+JSR NextPosSR
 LD R7,BrickSR_RET
 RET
 
-VF_RET .FILL 0
-VerticalFlipSR
-  ST R7,VF_RET
+;----------------------------
+;; Flips Ball_X_Dir
+;; Inputs: R3 as ball X dir
+;; Returns R3 as new ball X dir
+;----------------------------
+FLIP_X
+  NOT R3,R3
+  ADD R3,R3,#1
+  ST R3,BALL_X_DIR
+  RET
+
+;----------------------------
+;; Flips Ball_Y_Dir
+;; Inputs: R4 as ball Y dir
+;; Returns R4 as new ball Y dir
+;----------------------------
+FLIP_Y
+  NOT R4,R4
+  ADD R4,R4,#1
+  ST R4,BALL_Y_DIR
+  RET
+
+
 
 
 ;----------------------------
