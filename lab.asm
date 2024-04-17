@@ -11,6 +11,9 @@
 ;;+------------------------------+
 .orig x3000
 START:
+  ; Reset Game values
+  JSR ResetGameSR
+
   ; Initial Game Setup and Frame Buffer Initialization
   ; Preconditions: None
   ; Postconditions: Video buffer filled with black pixels, R0/R1/R4/R6 preserved
@@ -53,6 +56,27 @@ BOTTOM_ROW .FILL 30
 ;;+------------------------------+
 ;;|       Game Init Section      |
 ;;+------------------------------+
+
+;----------------------------
+;; Resets game constants
+;----------------------------
+ResetGameSR
+  AND R0,R0,#0
+  ST R0,BRICK_COLOR
+  ST R0,WALL_COLOR
+  ADD R0,R0,#2
+  ST R0,BRICK_COL
+  LD R0,ZERO
+  ADD R0,R0,#5
+  ST R0,BALL_X
+  ST R0,BALL_Y
+  LD R0,ZERO
+  ADD R0,R0,#1
+  ST R0,BALL_Y_DIR
+  ST R0,BALL_X_DIR
+  ADD R0,R0,#2
+  ST R0,Bricks_Remaining
+  RET
 
 ;----------------------------
 ;; Clears the frame buffer
@@ -124,9 +148,6 @@ InitializeGameSR
   RET
 HALT
 
-  ; Draw ball first position
-
-
 ;----------------------------
 ;; Draws Boundary
 ;; Inputs: R0 as start col, R1 as start row, R2 as color, R3 as width, R4 as height
@@ -192,6 +213,7 @@ DrawBrickSR
 ;;|       Game Loop Section      |
 ;;+------------------------------+
 
+;-- Game Constants
 BALL_X .FILL 5
 BALL_Y .FILL 5
 BALL_X_DIR .FILL 1
@@ -226,7 +248,7 @@ GameLoopSR
     TRAP x40
     LD R6,Bricks_Remaining
     BRp GameLoop
-  HALT
+  JSR GameOverSR
 
 ;----------------------------
 ;; Detects if ball has hit a wall, corner, brick, or bottom
@@ -259,8 +281,10 @@ BallCollisionSR
   LD R7,COLL_RET
   RET
 
-; next color is not calculated again after determining the next pixel is a wall, after
-; direction has changed
+;----------------------------
+;; Checks to see if hitting a horizontal and/or vertical wall. Flips direction accordingly.
+;; This also checks for corner as well.
+;----------------------------
 WallCol_RET .FILL 0
 WALL:
   ST R7,WallCol_RET
@@ -305,8 +329,9 @@ WALL:
 
 
 ;----------------------------
-;; Calculates next position based on current position and direction
-;; Inputs: R0 as current col, R1 as current row, R3 as x dir, R4 as y dir
+;; Handles hitting a brick. Only checks the ball's X value as its y does not matter.
+;; Inputs: None
+;; Uses: R0, R1, R2, R5, R4, R6
 ;----------------------------
 TEMP .FILL 0
 BrickSR_RET .FILL 0
@@ -353,17 +378,17 @@ DestroyBrick ; Destroys brick
     ADD R6,R6,#-1
     BRp DBLoop
   ;-- End DBLoop
-; Check to see if horizontal or vertical flip
-LD R0,Bricks_Remaining
-ADD R0,R0,#-1
-ST R0,Bricks_Remaining
-LD R4,BALL_Y_DIR
-JSR FLIP_Y
-LD R0,BALL_X
-LD R1,BALL_Y
-JSR NextPosSR
-LD R7,BrickSR_RET
-RET
+  ; Check to see if horizontal or vertical flip
+  LD R0,Bricks_Remaining
+  ADD R0,R0,#-1
+  ST R0,Bricks_Remaining
+  LD R4,BALL_Y_DIR
+  JSR FLIP_Y
+  LD R0,BALL_X
+  LD R1,BALL_Y
+  JSR NextPosSR
+  LD R7,BrickSR_RET
+  RET
 
 ;----------------------------
 ;; Flips Ball_X_Dir
@@ -436,3 +461,15 @@ DelayLoopSR
     BRp DelayLoop
   LD R6,DELAY_TEMP
   RET
+
+;----------------------------
+;; Handles game over
+;----------------------------
+MESSAGE .STRINGZ "Game Over"
+GameOverSR
+  LEA R0,MESSAGE
+  PUTS
+  HALT
+
+
+.END
