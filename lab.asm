@@ -223,29 +223,38 @@ Bricks_Remaining .FILL 3
 
 GameLoopSR
   GameLoop:
+    ; Delay
     JSR DelayLoopSR
 
+    ; Load Ball information
     LD R0,BALL_X
     LD R1,BALL_Y
     LD R3,BALL_X_DIR
     LD R4,BALL_Y_DIR
 
+    ; Check next position
     JSR NextPosSR
 
+    ; Check next position collision
     JSR BallCollisionSR
 
+    ; Clear current ball position
     LD R0,BALL_X
     LD R1,BALL_Y
     LD R2,Black
     TRAP x40
 
+    ; Load next position, store in current position
     LD R0,NPX
     LD R1,NPY
     ST R0,BALL_X
     ST R1,BALL_Y
 
+    ; Draw Ball
     LD R2,BALL_COLOR
     TRAP x40
+
+    ; Check if there are more than 0 bricks
     LD R6,Bricks_Remaining
     BRp GameLoop
   JSR GameOverSR
@@ -263,22 +272,22 @@ BallCollisionSR
   ; Check for wall
   LD R2,WALL_COLOR
   ADD R6,R2,R5
-  BRnp BrickCol
+  BRnp BrickCol ; If WallColor - NextCoor = 0 -> WALL
   JSR WALL
 
   BrickCol
   ST R5,COLL_TEMP
   LD R2,BRICK_COLOR
   ADD R6,R2,R5
-  BRnp BottomCol
+  BRnp BottomCol ; If BrickColor - NextColor = 0 -> BRICK
   JSR BRICK
   LD R7,COLL_RET
   BRnzp BallCollisionSR
 
-  BottomCol
+  BottomCol ; Unused as no way to lose right now.
   ;BRnzp BOTTOM
 
-  LD R7,COLL_RET
+  LD R7,COLL_RET ; Return to game loop
   RET
 
 ;----------------------------
@@ -378,16 +387,21 @@ DestroyBrick ; Destroys brick
     ADD R6,R6,#-1
     BRp DBLoop
   ;-- End DBLoop
-  ; Check to see if horizontal or vertical flip
+  ; Decrement number of bricks remaining after deletion
   LD R0,Bricks_Remaining
   ADD R0,R0,#-1
   ST R0,Bricks_Remaining
+
+  ; Flip y direction
   LD R4,BALL_Y_DIR
   JSR FLIP_Y
+
+  ; Load ball position, get next position
   LD R0,BALL_X
   LD R1,BALL_Y
   JSR NextPosSR
-  LD R7,BrickSR_RET
+
+  LD R7,BrickSR_RET ; Return to collision logic
   RET
 
 ;----------------------------
