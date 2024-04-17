@@ -248,7 +248,7 @@ GameLoopSR
     TRAP x40
     LD R6,Bricks_Remaining
     BRp GameLoop
-  HALT
+  JSR GameOverSR
 
 ;----------------------------
 ;; Detects if ball has hit a wall, corner, brick, or bottom
@@ -461,3 +461,15 @@ DelayLoopSR
     BRp DelayLoop
   LD R6,DELAY_TEMP
   RET
+
+;----------------------------
+;; Handles game over
+;----------------------------
+MESSAGE .STRINGZ "Game Over"
+GameOverSR
+  LEA R0,MESSAGE
+  PUTS
+  HALT
+
+
+.END
