@@ -11,6 +11,9 @@
 ;;+------------------------------+
 .orig x3000
 START:
+  ; Reset Game values
+  JSR ResetGameSR
+
   ; Initial Game Setup and Frame Buffer Initialization
   ; Preconditions: None
   ; Postconditions: Video buffer filled with black pixels, R0/R1/R4/R6 preserved
@@ -53,6 +56,27 @@ BOTTOM_ROW .FILL 30
 ;;+------------------------------+
 ;;|       Game Init Section      |
 ;;+------------------------------+
+
+;----------------------------
+;; Resets game constants
+;----------------------------
+ResetGameSR
+  AND R0,R0,#0
+  ST R0,BRICK_COLOR
+  ST R0,WALL_COLOR
+  ADD R0,R0,#2
+  ST R0,BRICK_COL
+  LD R0,ZERO
+  ADD R0,R0,#5
+  ST R0,BALL_X
+  ST R0,BALL_Y
+  LD R0,ZERO
+  ADD R0,R0,#1
+  ST R0,BALL_Y_DIR
+  ST R0,BALL_X_DIR
+  ADD R0,R0,#2
+  ST R0,Bricks_Remaining
+  RET
 
 ;----------------------------
 ;; Clears the frame buffer
