@@ -220,6 +220,7 @@ BALL_X_DIR .FILL 1
 BALL_Y_DIR .FILL 1
 BALL_COLOR .FILL 0
 Bricks_Remaining .FILL 3
+NEG_THIRTYTWO .FILL -32
 
 GameLoopSR
   GameLoop:
@@ -257,7 +258,7 @@ GameLoopSR
     ; Check if there are more than 0 bricks
     LD R6,Bricks_Remaining
     BRp GameLoop
-  JSR GameOverSR
+  BR GAME_OVER
 
 ;----------------------------
 ;; Detects if ball has hit a wall, corner, brick, or bottom
@@ -285,7 +286,9 @@ BallCollisionSR
   BRnzp BallCollisionSR
 
   BottomCol ; Unused as no way to lose right now.
-  ;BRnzp BOTTOM
+  LD R5,NEG_THIRTYTWO
+  ADD R5,R1,R5
+  BRz GAME_OVER
 
   LD R7,COLL_RET ; Return to game loop
   RET
@@ -480,7 +483,7 @@ DelayLoopSR
 ;; Handles game over
 ;----------------------------
 MESSAGE .STRINGZ "Game Over"
-GameOverSR
+GAME_OVER
   LEA R0,MESSAGE
   PUTS
   HALT
