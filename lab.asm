@@ -33,11 +33,6 @@ START:
 HALT
 
 ;; --- Constants Definition ---
-RED .FILL x7C00
-BLACK .FILL x0000
-GREEN .FILL x03E0
-WHITE .FILL x7FFF
-BLUE .FILL x001F
 
 VIDEO .FILL xC000
 DISPSIZE .FILL x3E00
@@ -76,6 +71,12 @@ ResetGameSR
   ST R0,BALL_X_DIR
   ADD R0,R0,#2
   ST R0,Bricks_Remaining
+  LD R0,ZERO
+  ADD R0,R0,#8
+  ST R0,PADDLE_POS
+  LD R0,ZERO
+  ST R0,LEFT_COLOR
+  ST R0,RIGHT_COLOR
   RET
 
 ;----------------------------
@@ -215,6 +216,11 @@ DrawBrickSR
 ;;+------------------------------+
 
 ;-- Game Constants
+RED .FILL x7C00
+BLACK .FILL x0000
+GREEN .FILL x03E0
+WHITE .FILL x7FFF
+BLUE .FILL x001F
 BALL_X .FILL 5
 BALL_Y .FILL 5
 BALL_X_DIR .FILL 1
@@ -306,6 +312,8 @@ PADDLE_RET .FILL 0
 PADDLE_WIDTH .FILL 5
 PADDLE_POS .FILL 8 ; Paddle leftpost pixel position
 PADDLE_ROW .FILL 30
+LEFT_COLOR .FILL 0 ; Needs restore
+RIGHT_COLOR .FILL 0 ; Needs restore
 LEFT_KEY:   .FILL x0061     ; Left - 'a'
 RIGHT_KEY:  .FILL x0064     ; Right - 'd'
 QUIT_KEY:   .FILL x002A     ; Quit - '*'
@@ -316,8 +324,11 @@ PaddleNextPosSR
   ; Get key pressed by user
   TRAP x42
 
-  LD R4,PADDLE_POS
+  LD R0,PADDLE_POS
   LD R1,PADDLE_ROW
+  ; Check if no key pressed
+  ADD R2,R5,#1
+  BRz PaddleDone
 
   ; Check if 'a' is pressed
   LD R2,LEFT_KEY
@@ -338,9 +349,66 @@ PaddleNextPosSR
   ; If 'a' pressed, move paddle left by 1
   ;R4 is paddle pos
   PaddleLeft:
+    ; Store colors
+    LD R2,RED
+    ST R2,LEFT_COLOR
+    LD R2,BLACK
+    ST R2,RIGHT_COLOR
+
+    ADD R6,R0,#4 ; Get Right fill position
+    ADD R5,R0,#-1 ; Get Left fill position
+
+    ; Draw new position
+    ADD R0,R0,#-1
+    ST R0,PADDLE_POS
+    JSR DrawPaddleSR
+
+    BRnzp PaddleDone
+
   PaddleRight:
+    ; Store colors
+    LD R2,BLACK
+    ST R2,LEFT_COLOR
+    LD R2,RED
+    ST R2,RIGHT_COLOR
+
+    ADD R6,R0,#5 ; Get Right fill position
+    ADD R5,R0,#0 ; Get Left fill position
+
+    ; Draw new position
+    ADD R0,R0,#1
+    ST R0,PADDLE_POS
+    JSR DrawPaddleSR
+
+    BRnzp PaddleDone
+
   PaddleDone:
-  HALT
+    LD R7,PADDLE_RET
+    RET
+
+;----------------------------
+;; Redraw Paddle using TRAP x40
+;; Input:
+;; - R6 as Right fill position
+;; - R5 as Left fill position
+;; Loads color values into R2 (LEFT_COLOR, RIGHT_COLOR) <- changed by branches
+;; Fills
+;----------------------------
+DRAW_PADDLE_RET .FILL 0
+DrawPaddleSR
+  ST R7,DRAW_PADDLE_RET
+
+  LD R2,LEFT_COLOR
+  AND R0,R0,#0
+  ADD R0,R0,R5
+  TRAP x40
+
+  LD R2,RIGHT_COLOR
+  AND R0,R0,#0
+  ADD R0,R0,R6
+  TRAP x40
+LD R7,DRAW_PADDLE_RET
+RET
 
 
 
@@ -519,7 +587,7 @@ NextPosSR
 ;----------------------------
 ;; Adds delay to each game tick
 ;----------------------------
-DELAY .FILL 9000
+DELAY .FILL 30000
 DELAY_TEMP .FILL 0
 DelayLoopSR
   ST R6,DELAY_TEMP
