@@ -123,10 +123,11 @@ InitializeGameSR
   JSR DrawBoundarySR
 
   ; Load bottom boundary values
-  LD R0,ZERO ; col start pos
-  LD R1,BOTTOM_ROW ; row start pos
-  LD R3,BOUNDARY_WIDTH ; load width of rect
-  LD R4,ONE ; load height of rect
+  LD R0,PADDLE_POS ; paddle leftmost pixel
+  LD R1,BOTTOM_ROW ; paddle row position
+  LD R3,PADDLE_WIDTH ; load width of paddle
+  LD R4,ONE ; load height of paddle
+  ;JSR DrawBoundarySR
   JSR DrawBoundarySR
 
   ; Draw Bricks
@@ -239,6 +240,9 @@ GameLoopSR
     ; Check next position collision
     JSR BallCollisionSR
 
+    ; Go to paddle subroutine
+    JSR PaddleNextPosSR
+
     ; Clear current ball position
     LD R0,BALL_X
     LD R1,BALL_Y
@@ -292,6 +296,53 @@ BallCollisionSR
 
   LD R7,COLL_RET ; Return to game loop
   RET
+
+;----------------------------
+;; Checks for user input for moving paddle
+;; If user presses 'a' paddle moves left
+;; If user presses 'd' paddle moves right
+;----------------------------
+PADDLE_RET .FILL 0
+PADDLE_WIDTH .FILL 5
+PADDLE_POS .FILL 8 ; Paddle leftpost pixel position
+PADDLE_ROW .FILL 30
+LEFT_KEY:   .FILL x0061     ; Left - 'a'
+RIGHT_KEY:  .FILL x0064     ; Right - 'd'
+QUIT_KEY:   .FILL x002A     ; Quit - '*'
+START_KEY:	.FILL x0020	    ; Start - ' '
+PaddleNextPosSR
+  ST R7,PADDLE_RET
+
+  ; Get key pressed by user
+  TRAP x42
+
+  LD R4,PADDLE_POS
+  LD R1,PADDLE_ROW
+
+  ; Check if 'a' is pressed
+  LD R2,LEFT_KEY
+  NOT R2,R2
+  ADD R2,R2,#1
+  ADD R2,R2,R5
+  BRz PaddleLeft
+
+  ; Check if 'd' is pressed
+  LD R2,RIGHT_KEY
+  NOT R2,R2
+  ADD R2,R2,#1
+  ADD R2,R2,R5
+  BRz PaddleRight
+
+  BRnzp PaddleDone
+
+  ; If 'a' pressed, move paddle left by 1
+  ;R4 is paddle pos
+  PaddleLeft:
+  PaddleRight:
+  PaddleDone:
+  HALT
+
+
 
 ;----------------------------
 ;; Checks to see if hitting a horizontal and/or vertical wall. Flips direction accordingly.
