@@ -247,7 +247,7 @@ GameLoopSR
     JSR BallCollisionSR
 
     ; Go to paddle subroutine
-    JSR PaddleNextPosSR
+    JSR KeyEventSR
 
     ; Clear current ball position
     LD R0,BALL_X
@@ -304,51 +304,52 @@ BallCollisionSR
   RET
 
 ;----------------------------
-;; Checks for user input for moving paddle
+;; User input handling
 ;; If user presses 'a' paddle moves left
 ;; If user presses 'd' paddle moves right
 ;----------------------------
-PADDLE_RET .FILL 0
+KEY_EVENT_RET .FILL 0
 PADDLE_WIDTH .FILL 5
 PADDLE_POS .FILL 8 ; Paddle leftpost pixel position
 PADDLE_ROW .FILL 30
 LEFT_COLOR .FILL 0 ; Needs restore
 RIGHT_COLOR .FILL 0 ; Needs restore
-LEFT_KEY:   .FILL x0061     ; Left - 'a'
-RIGHT_KEY:  .FILL x0064     ; Right - 'd'
+KEY_A:   .FILL x0061     ; Left - 'a'
+KEY_D:  .FILL x0064     ; Right - 'd'
 QUIT_KEY:   .FILL x002A     ; Quit - '*'
 START_KEY:	.FILL x0020	    ; Start - ' '
-PaddleNextPosSR
-  ST R7,PADDLE_RET
+KeyEventSR
+  ST R7,KEY_EVENT_RET
 
   ; Get key pressed by user
   TRAP x42
 
-  LD R0,PADDLE_POS
-  LD R1,PADDLE_ROW
   ; Check if no key pressed
   ADD R2,R5,#1
-  BRz PaddleDone
+  BRz KeyEventDone
 
   ; Check if 'a' is pressed
-  LD R2,LEFT_KEY
+  LD R2,KEY_A
   NOT R2,R2
   ADD R2,R2,#1
   ADD R2,R2,R5
-  BRz PaddleLeft
+  BRz KeyPress_a
 
   ; Check if 'd' is pressed
-  LD R2,RIGHT_KEY
+  LD R2,KEY_D
   NOT R2,R2
   ADD R2,R2,#1
   ADD R2,R2,R5
-  BRz PaddleRight
+  BRz KeyPress_d
 
-  BRnzp PaddleDone
+  BRnzp KeyEventDone
 
   ; If 'a' pressed, move paddle left by 1
   ;R4 is paddle pos
-  PaddleLeft:
+  KeyPress_a:
+    LD R0,PADDLE_POS
+    LD R1,PADDLE_ROW
+
     ; Store colors
     LD R2,RED
     ST R2,LEFT_COLOR
@@ -363,9 +364,12 @@ PaddleNextPosSR
     ST R0,PADDLE_POS
     JSR DrawPaddleSR
 
-    BRnzp PaddleDone
+    BRnzp KeyEventDone
 
-  PaddleRight:
+  KeyPress_d:
+    LD R0,PADDLE_POS
+    LD R1,PADDLE_ROW
+
     ; Store colors
     LD R2,BLACK
     ST R2,LEFT_COLOR
@@ -380,10 +384,10 @@ PaddleNextPosSR
     ST R0,PADDLE_POS
     JSR DrawPaddleSR
 
-    BRnzp PaddleDone
+    BRnzp KeyEventDone
 
-  PaddleDone:
-    LD R7,PADDLE_RET
+  KeyEventDone:
+    LD R7,KEY_EVENT_RET
     RET
 
 ;----------------------------
