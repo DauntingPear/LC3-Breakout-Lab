@@ -316,8 +316,9 @@ LEFT_COLOR .FILL 0 ; Needs restore
 RIGHT_COLOR .FILL 0 ; Needs restore
 KEY_A:   .FILL x0061     ; Left - 'a'
 KEY_D:  .FILL x0064     ; Right - 'd'
-QUIT_KEY:   .FILL x002A     ; Quit - '*'
+KEY_Q:   .FILL x0071     ; Quit - 'q'
 START_KEY:	.FILL x0020	    ; Start - ' '
+QUIT_MESSAGE .STRINGZ "Game Quit"
 KeyEventSR
   ST R7,KEY_EVENT_RET
 
@@ -341,6 +342,13 @@ KeyEventSR
   ADD R2,R2,#1
   ADD R2,R2,R5
   BRz KeyPress_d
+
+  ; Check if 'q' is pressed
+  LD R2,KEY_Q
+  NOT R2,R2
+  ADD R2,R2,#1
+  ADD R2,R2,R5
+  BRz KeyPress_q
 
   BRnzp KeyEventDone
 
@@ -385,6 +393,11 @@ KeyEventSR
     JSR DrawPaddleSR
 
     BRnzp KeyEventDone
+
+  KeyPress_q:
+    LEA R0,QUIT_MESSAGE
+    PUTS
+    HALT
 
   KeyEventDone:
     LD R7,KEY_EVENT_RET
