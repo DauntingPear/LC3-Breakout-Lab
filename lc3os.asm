@@ -559,6 +559,62 @@ MPR_INIT	.FILL xFFFF	; user can access everything
 ;MPR_INIT	.FILL x0FF8	; user can access x3000 to xbfff
 USER_CODE_ADDR	.FILL x3000	; user code starts at x3000
 
+;;; ***************************************************************************
+
+;;; GET_EVENT - your code for getting a keyboard or timer event
+;;; Input
+;;;   none
+;;; Output
+;;;   r5 - an integer indicating what event has happened
+;;;        0 (no input), 1 (left), 2 (right),  
+
+;  Register Saves
+GE_R0: .FILL x0
+GE_R1: .FILL x0
+GE_R2: .FILL x0
+GE_R3: .FILL x0
+GE_R4: .FILL x0
+;no r5
+GE_R6: .FILL x0
+GE_R7: .FILL x0        
+
+GET_EVENT:      
+        ; Register Saving
+        ST R0,GE_R0
+        ST R1,GE_R1
+        ST R2,GE_R2
+        ST R3,GE_R3
+        ST R4,GE_R4
+        ;; don't save R5 because it holds the return value
+        ST R6,GE_R6
+        ST R7,GE_R7
+        
+	AND R5,R5,#0		;Clear R5
+	ADD R5,R5,#-1
+	LDI R0,OS_KBSR		; wait for a keystroke
+	BRzp DONE_INPUT
+	LDI R5,OS_KBDR		; read it and return
+DONE_INPUT:
+	
+        ; Register Restoring
+        LD R0,GE_R0
+        LD R1,GE_R1
+        LD R2,GE_R2
+        LD R3,GE_R3
+        LD R4,GE_R4
+        ;; don't restore R5 because it holds the return value
+        LD R6,GE_R6
+        LD R7,GE_R7
+        
+        RTT
+
+; Input key ASCII codes
+LEFT_KEY:   .FILL x0061     ; Left - 'a'
+RIGHT_KEY:  .FILL x0064     ; Right - 'd'
+QUIT_KEY:   .FILL x002A     ; Quit - '*'
+START_KEY:	.FILL x0020	    ; Start - ' '
+
+; You may want to add some variables here
         
 ;;; GETC - Read a single character of input from keyboard device into R0
 TRAP_GETC
@@ -708,11 +764,6 @@ DB_R6: .FILL x0
 DB_R7: .FILL x0        
                 
 DRAW_BLOCK:     
-        ; 1)	DRAW_BLOCK	(TRAP	x40)
-            ; Input	r0	column	in	field	(x)
-            ; r1	row	in	field	(y)
-            ; r2	color	Output
-            ; video	memory	will	be	updated	to	place	block	of	appropriate	color
         ; Register Saving
         ST R0,DB_R0
         ST R1,DB_R1
@@ -725,25 +776,22 @@ DRAW_BLOCK:
         
         ; *** INSERT CODE FOR PART 1 HERE ***
         ;; ~25 lines of code or so
-        
 
-        MUL R3, R0, #4 ; Multiply column in field pixel by 4 (4x4 pixels), store in r3
-        MUL R4, R1, #4 ; multiply row in field pixel by 4 (4x4 pixels), store in r4
+        MUL R3, R0, #4
+        MUL R4, R1, #4
 	  
 	  LD R0, VIDEO_MEM_BEGIN
         LD R1, VIDEO_ROW_SIZE
         AND R5, R5, #0
 LOOP_FOUR:
-	  ADD R6, R4, R5 ; add relative pixel (r5) to abstract row (r4) and store in r6
-        MUL R6, R6, R1 ; multiply this by the video size (128,r1) to get actual pixel value
-        ADD R6, R6, R3 ; add actual pixel value to r3
-        ADD R6, R6, R0 ; increment actual pixel value by abstract position
-
-        STR R2, R6, #0 ; absolute pixel 0 in current row change color
-	      STR R2, R6, #1 ; absolute pixel 1 in current row change color
-        STR R2, R6, #2 ; absolute pixel 2 in current row change color
-        STR R2, R6, #3 ; absolute pixel 3 in current row change color
-
+	  ADD R6, R4, R5
+        MUL R6, R6, R1
+        ADD R6, R6, R3
+        ADD R6, R6, R0 
+        STR R2, R6, #0
+	  STR R2, R6, #1
+        STR R2, R6, #2  
+        STR R2, R6, #3  
         ADD R5, R5, #1
         ADD R6, R5, #-4
         BRn LOOP_FOUR
@@ -909,57 +957,6 @@ R_START: .FILL x35FE            ; Array of "random" numbers
          .FILL x4842
          .FILL xADEF
 
-;;; ***************************************************************************
 
-;;; GET_EVENT - your code for getting a keyboard or timer event
-;;; Input
-;;;   none
-;;; Output
-;;;   r5 - an integer indicating what event has happened
-;;;        0 (timer), -1 (quit), 1 (left), 2 (up), 3 (right), 4 (down)
-
-;  Register Saves
-GE_R0: .FILL x0
-GE_R1: .FILL x0
-GE_R2: .FILL x0
-GE_R3: .FILL x0
-GE_R4: .FILL x0
-;no r5
-GE_R6: .FILL x0
-GE_R7: .FILL x0        
-
-GET_EVENT:      
-        ; Register Saving
-        ST R0,GE_R0
-        ST R1,GE_R1
-        ST R2,GE_R2
-        ST R3,GE_R3
-        ST R4,GE_R4
-        ;; don't save R5 because it holds the return value
-        ST R6,GE_R6
-        ST R7,GE_R7
-        
-        ; *** INSERT CODE HERE ***
-        ;; ~50 lines of code or so
-
-        ; Register Restoring
-        LD R0,GE_R0
-        LD R1,GE_R1
-        LD R2,GE_R2
-        LD R3,GE_R3
-        LD R4,GE_R4
-        ;; don't restore R5 because it holds the return value
-        LD R6,GE_R6
-        LD R7,GE_R7
-        
-        RTT
-
-; Input key ASCII codes
-LEFT_KEY:   .FILL x0061     ; Left - 'a'
-RIGHT_KEY:  .FILL x006C     ; Right - 'l'
-QUIT_KEY:   .FILL x002A     ; Quit - '*'
-START_KEY:	.FILL x0020	    ; Start - ' '
-
-; You may want to add some variables here
 
 .END
