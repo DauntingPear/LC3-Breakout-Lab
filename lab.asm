@@ -32,21 +32,6 @@ START:
 
 HALT
 
-;; --- Constants Definition ---
-
-VIDEO .FILL xC000
-DISPSIZE .FILL x3E00
-BRICK_COLOR .FILL 0
-WALL_COLOR .FILL 0
-
-ZERO .FILL 0
-ONE .FILL 1
-
-BOUNDARY_WIDTH .FILL 20
-BOUNDARY_HEIGHT .FILL 31
-
-RIGHT_COL .FILL 20
-BOTTOM_ROW .FILL 30
 
 ;;+------------------------------+
 ;;|       Game Init Section      |
@@ -55,7 +40,9 @@ BOTTOM_ROW .FILL 30
 ;----------------------------
 ;; Resets game constants
 ;----------------------------
+RESET_RET .FILL 0
 ResetGameSR
+  ST R7,RESET_RET
   AND R0,R0,#0
   ST R0,BRICK_COLOR
   ST R0,WALL_COLOR
@@ -77,6 +64,7 @@ ResetGameSR
   LD R0,ZERO
   ST R0,LEFT_COLOR
   ST R0,RIGHT_COLOR
+  LD R7,RESET_RET
   RET
 
 ;----------------------------
@@ -211,11 +199,30 @@ DrawBrickSR
   LD R7,DRAW_BRICK_RET
   RET
 
+
+;; --- Constants Definition ---
+
+VIDEO .FILL xC000
+DISPSIZE .FILL x3E00
+BRICK_COLOR .FILL 0
+WALL_COLOR .FILL 0
+
+ZERO .FILL 0
+ONE .FILL 1
+
+BOUNDARY_WIDTH .FILL 20
+BOUNDARY_HEIGHT .FILL 31
+
+RIGHT_COL .FILL 20
+BOTTOM_ROW .FILL 30
+
 ;;+------------------------------+
 ;;|       Game Loop Section      |
 ;;+------------------------------+
 
 ;-- Game Constants
+START_MSG .STRINGZ "Press space to start\na -> left\nd -> right\nq -> quit\n"
+WIN .STRINGZ "You Win!!\n"
 RED .FILL x7C00
 BLACK .FILL x0000
 GREEN .FILL x03E0
@@ -228,8 +235,20 @@ BALL_Y_DIR .FILL 1
 BALL_COLOR .FILL 0
 Bricks_Remaining .FILL 3
 NEG_THIRTYTWO .FILL -32
+KEY_SPACE:	.FILL x0020	    ; Start - ' '
 
 GameLoopSR
+  ; Wait for user to press space
+  LEA R0,START_MSG
+  PUTS
+  AwaitUserStartLoop:
+    TRAP x20
+    LD R1,KEY_SPACE
+    NOT R1,R1
+    ADD R1,R1,#1
+    ADD R0,R0,R1
+    BRz GameLoop
+    BRnp AwaitUserStartLoop
   GameLoop:
     ; Delay
     JSR DelayLoopSR
@@ -268,7 +287,8 @@ GameLoopSR
     ; Check if there are more than 0 bricks
     LD R6,Bricks_Remaining
     BRp GameLoop
-  BR GAME_OVER
+  LEA R0,WIN
+  JSR GameOverSR
 
 ;----------------------------
 ;; Detects if ball has hit a wall, corner, brick, or bottom
@@ -278,6 +298,7 @@ GameLoopSR
 COLL_RET .FILL 0
 COLL_TEMP .FILL 0
 NEXTCOLOR_TEMP .FILL 0
+LOSE .STRINGZ "You Lose!!!\n"
 BallCollisionSR
   ST R7,COLL_RET
   ; Check for wall
@@ -298,8 +319,11 @@ BallCollisionSR
   BottomCol ; Unused as no way to lose right now.
   LD R5,NEG_THIRTYTWO
   ADD R5,R1,R5
-  BRz GAME_OVER
+  BRnp NoCollision
+  LEA R0,LOSE
+  JSR GameOverSR
 
+  NoCollision
   LD R7,COLL_RET ; Return to game loop
   RET
 
@@ -317,7 +341,6 @@ RIGHT_COLOR .FILL 0 ; Needs restore
 KEY_A:   .FILL x0061     ; Left - 'a'
 KEY_D:  .FILL x0064     ; Right - 'd'
 KEY_Q:   .FILL x0071     ; Quit - 'q'
-START_KEY:	.FILL x0020	    ; Start - ' '
 QUIT_MESSAGE .STRINGZ "Game Quit"
 KeyEventSR
   ST R7,KEY_EVENT_RET
@@ -358,6 +381,10 @@ KeyEventSR
     LD R0,PADDLE_POS
     LD R1,PADDLE_ROW
 
+    ; Check to see if movement would exceed bounds
+    ADD R2,R0,#-1
+    BRz KeyEventDone
+
     ; Store colors
     LD R2,RED
     ST R2,LEFT_COLOR
@@ -377,6 +404,10 @@ KeyEventSR
   KeyPress_d:
     LD R0,PADDLE_POS
     LD R1,PADDLE_ROW
+
+    ; Check to see if movement would exceed bounds
+    ADD R2,R0,#-15
+    BRz KeyEventDone
 
     ; Store colors
     LD R2,BLACK
@@ -618,10 +649,59 @@ DelayLoopSR
 ;----------------------------
 ;; Handles game over
 ;----------------------------
-MESSAGE .STRINGZ "Game Over"
-GAME_OVER
-  LEA R0,MESSAGE
+CHOOSE .STRINGZ "Play again?\nYes: y\nNo: n\n> "
+EQUALS .FILL 61
+QUIT .STRINGZ "QUIT"
+CONT .STRINGZ "CONTINUE\n"
+KEY_Y .FILL x0079
+KEY_N .FILL x006E
+START_RET .FILL x3000
+GameOverSR
+  ; Print to console
   PUTS
+  LEA R0,CHOOSE
+  PUTS
+
+  GameOverLoop:
+    TRAP x20
+
+    ADD R2,R0,#1
+    BRz NoKeyPress
+
+    LD R2,KEY_Y
+    NOT R2,R2
+    ADD R2,R2,#1
+    ADD R2,R2,R0
+    BRz KeyPress_y
+
+    LD R2,KEY_N
+    NOT R2,R2
+    ADD R2,R2,#1
+    ADD R2,R2,R0
+    BRz KeyPress_n
+
+    NoKeyPress
+      BRnzp GameOverLoop
+
+    KeyPress_y
+      OUT
+      AND R0,R0,#0
+      ADD R0,R0,#10
+      OUT
+      LEA R0,CONT
+      PUTS
+      LD R7,START_RET
+      JMP R7
+
+    KeyPress_n
+      OUT
+      AND R0,R0,#0
+      ADD R0,R0,#10
+      OUT
+      LEA R0,QUIT
+      PUTS
+      HALT
+
   HALT
 
 
